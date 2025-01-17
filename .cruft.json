@@ -1,0 +1,24 @@
+{
+  "template": "https://github.com/monarch-initiative/monarch-project-template",
+  "commit": "8d5c84f22159bf7181ba86dabc2eea7e93551413",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "matrix-validator",
+      "github_org_name": "everycure-org",
+      "__project_slug": "matrix_validator",
+      "project_description": "A validation tool for KG edges and nodes in KGX format",
+      "min_python_version": "3.10",
+      "file_name": "validator",
+      "greeting_recipient": "World",
+      "full_name": "Nicolas Matentzoglu",
+      "email": "nico@semanticly.org",
+      "__author": "Nicolas Matentzoglu <nico@semanticly.org>",
+      "license": "BSD-3",
+      "github_token_for_doc_deployment": "GH_TOKEN",
+      "github_token_for_pypi_deployment": "PYPI_TOKEN",
+      "_template": "https://github.com/monarch-initiative/monarch-project-template"
+    }
+  },
+  "directory": null
+}
