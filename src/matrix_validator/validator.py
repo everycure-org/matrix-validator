@@ -2,7 +2,7 @@
 
 import logging
 
-from matrix_validator.datamodels import NodeSchema, EdgeSchema
+from matrix_validator.datamodels import EdgeSchema, NodeSchema
 from matrix_validator.util import read_tsv_as_strings
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ def validate_kg(nodes, edges, output_format, report_file):
     # Write validation report
     write_report(output_format, report_file, validation_reports)
     logging.info(f"Validation report written to {report_file}")
+
 
 def write_report(output_format, report_file, validation_reports):
     """Write the validation report to a file."""

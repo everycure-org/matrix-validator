@@ -22,4 +22,3 @@ class EdgeSchema(pa.DataFrameModel):
     aggregator_knowledge_source: Optional[str]
     knowledge_level: str
     agent_type: str
-
