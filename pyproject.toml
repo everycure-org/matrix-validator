@@ -12,7 +12,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10"
 click = "*"
-polars-lts-cpu = "^1.20.0"
+polars = "1.21.0"
+polars-lts-cpu = "^1.21.0"
 importlib-metadata = ">=8.2.0"
 pandera = "^0.22.1"
 
@@ -33,6 +34,8 @@ myst-parser = {version = ">=0.18.1"}
 
 [tool.poetry.scripts]
 matrix-validate-kg = "matrix_validator.cli:main"
+matrix-validate-kg-nodes = "matrix_validator.validate-nodes:main"
+matrix-validate-kg-edges = "matrix_validator.validate-edges:main"
 
 [tool.poetry-dynamic-versioning]
 enable = true
