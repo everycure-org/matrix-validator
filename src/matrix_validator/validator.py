@@ -15,17 +15,15 @@ def validate_kg(nodes, edges, output_format, report_file):
     # Validate nodes if provided
     if nodes:
         logger.info("Validating nodes TSV...")
-        nodes_df = read_tsv_as_strings(nodes)
-        logger.debug(f"Nodes DataFrame: {nodes_df.head()}")
-        node_validation = NodeSchema.validate(nodes_df)
+        node_validation = NodeSchema.validate(read_tsv_as_strings(nodes), lazy=True).collect()
+        # node_validation = read_tsv_as_strings(nodes).pipe(NodeSchema.validate).collect()
         validation_reports.append(f"Nodes Validation Passed: {node_validation}")
 
     # Validate edges if provided
     if edges:
         logger.info("Validating edges TSV...")
-        edges_df = read_tsv_as_strings(edges)
-        logger.debug(f"Edges DataFrame: {edges_df.head()}")
-        edge_validation = EdgeSchema.validate(edges_df)
+        edge_validation = EdgeSchema.validate(read_tsv_as_strings(edges), lazy=True).collect()
+        # edge_validation = read_tsv_as_strings(edges).pipe(EdgeSchema.validate).collect()
         validation_reports.append(f"Edges Validation Passed: {edge_validation}")
 
     # Write validation report
