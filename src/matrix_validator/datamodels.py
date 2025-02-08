@@ -19,6 +19,6 @@ class EdgeSchema(pa.DataFrameModel):
     predicate: str
     object: str
     primary_knowledge_source: str
-    aggregator_knowledge_source: Optional[str]
+    aggregator_knowledge_source: Optional[str] = pa.Field(nullable=True)
     knowledge_level: str
     agent_type: str
