@@ -3,22 +3,23 @@
 from typing import Optional
 
 import pandera.polars as pa
+from pandera.typing import Series
 
 
 class NodeSchema(pa.DataFrameModel):
     """Schema for nodes TSV file."""
 
-    id: str
-    category: str
+    id: Series[str]
+    category: Series[str]
 
 
 class EdgeSchema(pa.DataFrameModel):
     """Schema for edges TSV file."""
 
-    subject: str
-    predicate: str
-    object: str
-    primary_knowledge_source: str
-    aggregator_knowledge_source: Optional[str]
-    knowledge_level: str
-    agent_type: str
+    subject: Series[str]
+    predicate: Series[str]
+    object: Series[str]
+    primary_knowledge_source: Series[str]
+    aggregator_knowledge_source: Optional[Series[str]] = pa.Field(nullable=True)
+    knowledge_level: Series[str]
+    agent_type: Series[str]
