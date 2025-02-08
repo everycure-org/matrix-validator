@@ -11,7 +11,13 @@ logger = logging.getLogger(__name__)
 
 @click.command()
 @click.option("--input", "-i", type=click.File("r"), required=True, help="Path to the edges TSV file.")
-@click.option("--output_dir", "-o", type=click.Path(dir_okay=True, file_okay=False, writable=True), required=True, help="Path to write report.")
+@click.option(
+    "--output_dir",
+    "-o",
+    type=click.Path(dir_okay=True, file_okay=False, writable=True),
+    required=True,
+    help="Path to write report.",
+)
 @click.option("--verbose", "-v", count=True, help="Increase verbosity (can be repeated).")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress all output except errors.")
 @click.version_option(__version__)
@@ -47,14 +53,20 @@ def validate_kg_edges(input, output_dir):
     curie_regex = "^[A-Za-z_]+:.+$"
     starts_with_biolink_regex = "^biolink:.+$"
 
-    validation_reports = pl.scan_csv(input, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
-        pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
-        (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
-        pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
-        (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
-        pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
-        (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
-    ]).collect()
+    validation_reports = (
+        pl.scan_csv(input, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
+        .select(
+            [
+                pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
+                (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
+                pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
+                (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
+                pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
+                (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
+            ]
+        )
+        .collect()
+    )
 
     # Write validation report
     output = os.path.join(output_dir, "edges_report.json")
