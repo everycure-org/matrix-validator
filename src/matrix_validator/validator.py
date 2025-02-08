@@ -1,6 +1,7 @@
 """Main python file."""
 
 import logging
+
 from matrix_validator.datamodels import EdgeSchema, NodeSchema
 from matrix_validator.util import read_tsv_as_strings
 
