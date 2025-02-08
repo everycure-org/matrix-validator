@@ -1,8 +1,8 @@
 import logging
 import os
 
-import polars as pl
 import click
+import polars as pl
 
 from matrix_validator import __version__
 
