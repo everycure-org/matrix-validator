@@ -1,3 +1,5 @@
+"""Main python file."""
+
 import logging
 import os.path
 
