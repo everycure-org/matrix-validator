@@ -46,7 +46,6 @@ def main(input, output_dir, verbose, quiet):
 
 def validate_kg_nodes(input, output_dir):
     """Validate a knowledge graph using optional nodes TSV files."""
-
     # Validate nodes if provided
     logger.info("Validating nodes TSV...")
 
