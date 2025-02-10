@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.option("--nodes", type=click.File("r"), required=False, help="Path to the nodes TSV file.")
-@click.option("--edges", type=click.File("r"), required=False, help="Path to the edges TSV file.")
+@click.option("--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
+@click.option("--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
 @click.option("--report", type=click.Path(writable=True), required=False, help="Path to write report.")
 @click.option(
     "--output-format",
