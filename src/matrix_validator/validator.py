@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from typing import Optional
 
 import polars as pl
@@ -113,6 +114,62 @@ def validate_kg(
     # Write validation report
     logging.info(f"📄 Validation report written to {report_file}")
     write_report(output_format, report_file, validation_reports)
+
+
+def validate_kg_edges(input, output_dir):
+    """Validate a knowledge graph using optional edges TSV files."""
+    # Validate nodes if provided
+    logger.info("Validating edges TSV...")
+
+    curie_regex = "^[A-Za-z_]+:.+$"
+    starts_with_biolink_regex = "^biolink:.+$"
+
+    validation_reports = (
+        pl.scan_csv(input, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
+        .select(
+            [
+                pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
+                (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
+                pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
+                (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
+                pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
+                (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
+            ]
+        )
+        .collect()
+    )
+
+    # Write validation report
+    output = os.path.join(output_dir, "edges_report.json")
+    logging.info(f"Writing Validation report: {output}")
+    validation_reports.write_json(output)
+
+
+def validate_kg_nodes(input, output_dir):
+    """Validate a knowledge graph using optional nodes TSV files."""
+    # Validate nodes if provided
+    logger.info("Validating nodes TSV...")
+
+    curie_regex = "^[A-Za-z_]+:.+$"
+    starts_with_biolink_regex = "^biolink:.+$"
+
+    validation_reports = (
+        pl.scan_csv(input, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
+        .select(
+            [
+                pl.col("id").str.contains(curie_regex).sum().alias("valid_curie_id_count"),
+                (~pl.col("id").str.contains(curie_regex)).sum().alias("invalid_curie_id_count"),
+                pl.col("category").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_category_count"),
+                (~pl.col("category").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_category_count"),
+            ]
+        )
+        .collect()
+    )
+
+    # Write validation report
+    output = os.path.join(output_dir, "edges_report.json")
+    logging.info(f"Writing Validation report: {output}")
+    validation_reports.write_json(output)
 
 
 def write_report(output_format, report_file, validation_reports):
