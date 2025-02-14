@@ -62,4 +62,3 @@ class MatrixEdgeCollectionSchema(pa.DataFrameModel):
     """Schema for matrixedgecollection TSV file."""
 
     entries: Optional[Series[str]] = pa.Field(nullable=True)
-      
