@@ -179,9 +179,6 @@ def validate_kg_edges(edges, output_format, report_file):
 
     logger.info("Validating edges TSV...")
 
-    curie_regex = r"^[A-Za-z_\.]+:.+$"
-    starts_with_biolink_regex = r"^biolink:.+$"
-
     counts_df = (
         pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(
