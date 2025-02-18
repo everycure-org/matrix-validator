@@ -11,14 +11,8 @@ test:
 
 test_nodes:
 	mkdir -p tmp
-	poetry run matrix-validate-kg-nodes -vvv \
-		--report tmp/nodes_report.txt \
-		--nodes tests/data/testdata_robokop-kg_nodes.tsv
-	cat tmp/nodes_report.txt
+	poetry run matrix-validate-kg-nodes -vvv -o tmp -i tests/data/testdata_robokop-kg_nodes.tsv
 
 test_edges:
 	mkdir -p tmp
-	poetry run matrix-validate-kg-edges -vvv \
-		--report tmp/edges_report.txt \
-		--nodes tests/data/testdata_robokop-kg_edges.tsv
-	cat tmp/edges_report.txt
+	poetry run matrix-validate-kg-edges -vvv -o tmp -i tests/data/testdata_robokop-kg_edges.tsv

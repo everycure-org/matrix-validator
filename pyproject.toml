@@ -12,8 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10"
 click = "*"
-polars = "1.21.0"
-polars-lts-cpu = "^1.21.0"
+polars-lts-cpu = "^1.22.0"
 importlib-metadata = ">=8.2.0"
 pandera = "^0.22.1"
 
@@ -43,8 +42,8 @@ vcs = "git"
 style = "pep440"
 
 [tool.black]
-line-length = 120
-target-version = ["py38", "py39", "py310"]
+line-length = 140
+target-version = ["py38", "py39", "py310", "py311"]
 
 [tool.ruff]
 lint.extend-ignore = [

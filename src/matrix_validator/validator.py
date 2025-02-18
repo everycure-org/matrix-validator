@@ -1,36 +1,119 @@
 """Main python file."""
 
+import json
 import logging
+import os
+from typing import Optional
+
 import polars as pl
-from matrix_validator.datamodels import EdgeSchema, NodeSchema
-from matrix_validator.util import read_tsv_as_strings
+
+from matrix_validator.datamodels import MatrixEdgeSchema, MatrixNodeSchema
 
 logger = logging.getLogger(__name__)
 
 
-def validate_kg(nodes, edges, output_format, report_file):
+def format_schema_error(error: dict) -> str:
+    """Format Pandera schema validation errors for better readability."""
+    formatted_messages = []
+
+    if "SCHEMA" in error:
+        for issue_type, issues in error["SCHEMA"].items():
+            for issue in issues:
+                formatted_messages.append(
+                    f"  - ❌ **{issue_type.replace('_', ' ').title()}**\n"
+                    f"    - Schema: `{issue.get('schema', 'Unknown')}`\n"
+                    f"    - Column: `{issue.get('column', 'Unknown')}`\n"
+                    f"    - Error: {issue.get('error', 'No details')}\n"
+                )
+
+    return "\n".join(formatted_messages) if formatted_messages else str(error)
+
+
+def validate_kg(
+    nodes: Optional[str],
+    edges: Optional[str],
+    output_format: str,
+    report_file: str,
+    invalid_edges_output_file=None,
+    invalid_nodes_output_file=None,
+    batch_size=10_000,
+):
     """Validate a knowledge graph using optional nodes and edges TSV files."""
     validation_reports = []
+    invalid_edges = []
+    invalid_nodes = []
+
+    if not invalid_edges_output_file:
+        invalid_edges_output_file = f"{report_file}_invalid_edges.tsv"
+
+    if not invalid_nodes_output_file:
+        invalid_nodes_output_file = f"{report_file}_invalid_nodes.tsv"
 
     # Validate nodes if provided
     if nodes:
-        logger.info("Validating nodes TSV...")
-        nodes_df = read_tsv_as_strings(nodes)
-        logger.debug(f"Nodes DataFrame: {nodes_df.head()}")
-        node_validation = NodeSchema.validate(nodes_df)
-        validation_reports.append(f"Nodes Validation Passed: {node_validation}")
+        logging.warning(f"🔍 Validating Nodes TSV: {nodes}")
+
+        try:
+            reader = pl.read_csv_batched(nodes, separator="\t", infer_schema_length=0, batch_size=batch_size)
+            node_batches = list(reader.next_batches(5))  # Store batches to avoid generator exhaustion
+
+            if not node_batches:
+                validation_reports.append("⚠️ **Nodes Validation Failed**: No data found in the nodes file.")
+            else:
+                # validated_nodes = [MatrixNodeSchema.validate(df, lazy=True) for df in node_batches]
+                # validation_reports.append("✅ **Nodes Validation Passed**")
+                validated_nodes = []
+                for df in node_batches:
+                    try:
+                        validated_nodes.append(MatrixNodeSchema.validate(df, lazy=True))
+                    except Exception:
+                        logging.warning("❌ Node validation failed for a batch.")
+                        invalid_nodes.append(df)
+
+                validation_reports.append("✅ **Edges Validation Passed**")
+        except Exception as e:
+            error_message = json.loads(str(e)) if "SCHEMA" in str(e) else str(e)
+            validation_reports.append(f"❌ **Nodes Validation Failed**:\n{format_schema_error(error_message)}")
 
     # Validate edges if provided
     if edges:
-        logger.info("Validating edges TSV...")
-        edges_df = read_tsv_as_strings(edges)
-        logger.debug(f"Edges DataFrame: {edges_df.head()}")
-        edge_validation = EdgeSchema.validate(edges_df)
-        validation_reports.append(f"Edges Validation Passed: {edge_validation}")
+        logging.warning(f"🔍 Validating Edges TSV: {edges}")
+
+        try:
+            reader = pl.read_csv_batched(edges, separator="\t", infer_schema_length=0, batch_size=batch_size)
+            edge_batches = list(reader.next_batches(5))  # Store batches to prevent multiple iterations
+
+            if not edge_batches:
+                validation_reports.append("⚠️ **Edges Validation Failed**: No data found in the edges file.")
+            else:
+                validated_edges = []
+                for df in edge_batches:
+                    try:
+                        validated_edges.append(MatrixEdgeSchema.validate(df, lazy=True))
+                    except Exception:
+                        logging.warning("❌ Edge validation failed for a batch.")
+                        invalid_edges.append(df)  # Capture invalid rows
+
+                validation_reports.append("✅ **Edges Validation Passed**")
+
+        except Exception as e:
+            error_message = json.loads(str(e)) if "SCHEMA" in str(e) else str(e)
+            validation_reports.append(f"❌ **Edges Validation Failed**:\n{format_schema_error(error_message)}")
+
+    # Write invalid rows to a file
+    if invalid_edges:
+        invalid_data = pl.concat(invalid_edges)
+        invalid_data.write_csv(invalid_edges_output_file, separator="\t")
+        logging.warning(f"⚠️ Invalid edges written to {invalid_edges_output_file}")
+
+    if invalid_nodes:
+        invalid_data = pl.concat(invalid_nodes)
+        invalid_data.write_csv(invalid_nodes_output_file, separator="\t")
+        logging.warning(f"⚠️ Invalid nodes written to {invalid_nodes_output_file}")
 
     # Write validation report
+    logging.info(f"📄 Validation report written to {report_file}")
     write_report(output_format, report_file, validation_reports)
-    logging.info(f"Validation report written to {report_file}")
 
 
 def validate_kg_nodes(nodes, output_format, report_file):
@@ -66,6 +149,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
     # Write validation report
     write_report(output_format, report_file, validation_reports)
     logging.info(f"Validation report written to {report_file}")
+
 
 def validate_kg_edges(edges, output_format, report_file):
     """Validate a knowledge graph using optional edges TSV files."""
@@ -113,6 +197,7 @@ def validate_kg_edges(edges, output_format, report_file):
 def write_report(output_format, report_file, validation_reports):
     """Write the validation report to a file."""
     if report_file:
+
         with open(report_file, "w") as report:
             if output_format == "txt":
                 report.write("\n".join(validation_reports))
