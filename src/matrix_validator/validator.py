@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from typing import Optional
 
 import polars as pl
