@@ -148,7 +148,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
                     pl.when(~pl.col("id").str.contains(curie_regex)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_id"),
                 ]
             )
-            .filter(pl.col("invalid_curie_id").is_null().not_())
+            .filter(pl.col("invalid_curie_id").is_not_null())
             .collect()
         )
         validation_reports.append(violations_df.write_ndjson())
@@ -164,7 +164,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
                     .alias("invalid_starts_with_biolink_category"),
                 ]
             )
-            .filter(pl.col("invalid_starts_with_biolink_category").is_null().not_())
+            .filter(pl.col("invalid_starts_with_biolink_category").is_not_null())
             .collect()
         )
         validation_reports.append(violations_df.write_ndjson())
@@ -206,12 +206,12 @@ def validate_kg_edges(edges, output_format, report_file):
             .select(
                 [
                     pl.when(~pl.col("subject").str.contains(curie_regex))
-                    .then(pl.col("id"))
+                    .then(pl.col("subject"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_curie_subject"),
                 ]
             )
-            .filter(pl.col("invalid_curie_subject").is_null().not_())
+            .filter(pl.col("invalid_curie_subject").is_not_null())
             .collect()
         )
         validation_reports.append(violations_df.write_ndjson())
@@ -222,12 +222,12 @@ def validate_kg_edges(edges, output_format, report_file):
             .select(
                 [
                     pl.when(~pl.col("object").str.contains(curie_regex))
-                    .then(pl.col("id"))
+                    .then(pl.col("object"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_curie_object"),
                 ]
             )
-            .filter(pl.col("invalid_curie_object").is_null().not_())
+            .filter(pl.col("invalid_curie_object").is_not_null())
             .collect()
         )
         validation_reports.append(violations_df.write_ndjson())
@@ -243,7 +243,7 @@ def validate_kg_edges(edges, output_format, report_file):
                     .alias("invalid_starts_with_biolink_predicate"),
                 ]
             )
-            .filter(pl.col("invalid_starts_with_biolink_predicate").is_null().not_())
+            .filter(pl.col("invalid_starts_with_biolink_predicate").is_not_null())
             .collect()
         )
         validation_reports.append(violations_df.write_ndjson())
