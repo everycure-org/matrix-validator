@@ -37,46 +37,76 @@ def validate_kg_nodes(nodes, output_format, report_file):
     """Validate a knowledge graph using optional nodes TSV files."""
     validation_reports = []
 
-    # Validate nodes if provided
-    if nodes:
-        logger.info("Validating nodes TSV...")
-            
-        curie_regex = "^[A-Za-z_]+:.+$"
-        starts_with_biolink_regex = "^biolink:.+$"
+    logger.info("Validating nodes TSV...")
+        
+    curie_regex = "^[A-Za-z_\.]+:.+$"
+    starts_with_biolink_regex = "^biolink:.+$"
 
-        validation_reports = pl.scan_csv(nodes, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
-            pl.col("id").str.contains(curie_regex).sum().alias("valid_curie_id_count"),
-            (~pl.col("id").str.contains(curie_regex)).sum().alias("invalid_curie_id_count"),
-            pl.col("category").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_category_count"),
-            (~pl.col("category").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_category_count")
-        ]).collect()
+    counts_df = pl.scan_csv(nodes, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+        pl.col("id").str.contains(curie_regex).sum().alias("valid_curie_id_count"),
+        (~pl.col("id").str.contains(curie_regex)).sum().alias("invalid_curie_id_count"),
+        pl.col("category").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_category_count"),
+        (~pl.col("category").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_category_count")
+    ]).collect()
+
+    validation_reports.append(counts_df.write_ndjson())
+    
+    if counts_df.get_column("invalid_curie_id_count").item(0) > 0:
+        violations_df = pl.scan_csv(nodes, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+            pl.when(~pl.col("id").str.contains(curie_regex)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_id"),
+        ]).filter(pl.col("invalid_curie_id").is_null().not_()).collect()
+        validation_reports.append(violations_df.write_ndjson())
+
+    if counts_df.get_column("invalid_starts_with_biolink_category_count").item(0) > 0:
+        violations_df = pl.scan_csv(nodes, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+            pl.when(~pl.col("category").str.contains(curie_regex)).then(pl.col("category")).otherwise(pl.lit(None)).alias("invalid_starts_with_biolink_category"),
+        ]).filter(pl.col("invalid_starts_with_biolink_category").is_null().not_()).collect()
+        validation_reports.append(violations_df.write_ndjson())
 
     # Write validation report
-    validation_reports.write_json(report_file)
+    write_report(output_format, report_file, validation_reports)
     logging.info(f"Validation report written to {report_file}")
 
 def validate_kg_edges(edges, output_format, report_file):
     """Validate a knowledge graph using optional edges TSV files."""
     validation_reports = []
 
-    # Validate nodes if provided
-    if edges:
-        logger.info("Validating edges TSV...")
+    logger.info("Validating edges TSV...")
 
-        curie_regex = "^[A-Za-z_]+:.+$"
-        starts_with_biolink_regex = "^biolink:.+$"
+    curie_regex = "^[A-Za-z_\.]+:.+$"
+    starts_with_biolink_regex = "^biolink:.+$"
 
-        validation_reports = pl.scan_csv(edges, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
-            pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
-            (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
-            pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
-            (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
-            pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
-            (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
-        ]).collect()
+    counts_df = pl.scan_csv(edges, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+        pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
+        (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
+        pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
+        (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
+        pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
+        (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
+    ]).collect()
+
+    validation_reports.append(counts_df.write_ndjson())
+
+    if counts_df.get_column("invalid_curie_subject_count").item(0) > 0:
+        violations_df = pl.scan_csv(edges, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+            pl.when(~pl.col("subject").str.contains(curie_regex)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_subject"),
+        ]).filter(pl.col("invalid_curie_subject").is_null().not_()).collect()
+        validation_reports.append(violations_df.write_ndjson())
+
+    if counts_df.get_column("invalid_curie_object_count").item(0) > 0:
+        violations_df = pl.scan_csv(edges, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+            pl.when(~pl.col("object").str.contains(curie_regex)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_object"),
+        ]).filter(pl.col("invalid_curie_object").is_null().not_()).collect()
+        validation_reports.append(violations_df.write_ndjson())
+
+    if counts_df.get_column("invalid_starts_with_biolink_predicate_count").item(0) > 0:
+        violations_df = pl.scan_csv(edges, separator='\t', truncate_ragged_lines=True, has_header=True, ignore_errors=True).select([
+            pl.when(~pl.col("predicate").str.contains(curie_regex)).then(pl.col("predicate")).otherwise(pl.lit(None)).alias("invalid_starts_with_biolink_predicate"),
+        ]).filter(pl.col("invalid_starts_with_biolink_predicate").is_null().not_()).collect()
+        validation_reports.append(violations_df.write_ndjson())
 
     # Write validation report
-    validation_reports.write_json(report_file)
+    write_report(output_format, report_file, validation_reports)
     logging.info(f"Validation report written to {report_file}")
 
 
