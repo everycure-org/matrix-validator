@@ -11,6 +11,9 @@ from matrix_validator.datamodels import MatrixEdgeSchema, MatrixNodeSchema
 
 logger = logging.getLogger(__name__)
 
+CURIE_REGEX = r"^[A-Za-z_\.]+:.+$"
+STARTS_WITH_BIOLINK_REGEX = r"^biolink:.+$"
+
 
 def format_schema_error(error: dict) -> str:
     """Format Pandera schema validation errors for better readability."""
@@ -122,17 +125,15 @@ def validate_kg_nodes(nodes, output_format, report_file):
 
     logger.info("Validating nodes TSV...")
 
-    curie_regex = "^[A-Za-z_\.]+:.+$"
-    starts_with_biolink_regex = "^biolink:.+$"
 
     counts_df = (
         pl.scan_csv(nodes, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(
             [
-                pl.col("id").str.contains(curie_regex).sum().alias("valid_curie_id_count"),
-                (~pl.col("id").str.contains(curie_regex)).sum().alias("invalid_curie_id_count"),
-                pl.col("category").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_category_count"),
-                (~pl.col("category").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_category_count"),
+                pl.col("id").str.contains(CURIE_REGEX).sum().alias("valid_curie_id_count"),
+                (~pl.col("id").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_id_count"),
+                pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX).sum().alias("valid_starts_with_biolink_category_count"),
+                (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_category_count"),
             ]
         )
         .collect()
@@ -145,7 +146,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
             pl.scan_csv(nodes, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
             .select(
                 [
-                    pl.when(~pl.col("id").str.contains(curie_regex)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_id"),
+                    pl.when(~pl.col("id").str.contains(CURIE_REGEX)).then(pl.col("id")).otherwise(pl.lit(None)).alias("invalid_curie_id"),
                 ]
             )
             .filter(pl.col("invalid_curie_id").is_not_null())
@@ -158,7 +159,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
             pl.scan_csv(nodes, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
             .select(
                 [
-                    pl.when(~pl.col("category").str.contains(curie_regex))
+                    pl.when(~pl.col("category").str.contains(CURIE_REGEX))
                     .then(pl.col("category"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_starts_with_biolink_category"),
@@ -180,19 +181,19 @@ def validate_kg_edges(edges, output_format, report_file):
 
     logger.info("Validating edges TSV...")
 
-    curie_regex = "^[A-Za-z_\.]+:.+$"
-    starts_with_biolink_regex = "^biolink:.+$"
+    curie_regex = r"^[A-Za-z_\.]+:.+$"
+    starts_with_biolink_regex = r"^biolink:.+$"
 
     counts_df = (
         pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(
             [
-                pl.col("subject").str.contains(curie_regex).sum().alias("valid_curie_subject_count"),
-                (~pl.col("subject").str.contains(curie_regex)).sum().alias("invalid_curie_subject_count"),
-                pl.col("predicate").str.contains(starts_with_biolink_regex).sum().alias("valid_starts_with_biolink_predicate_count"),
-                (~pl.col("predicate").str.contains(starts_with_biolink_regex)).sum().alias("invalid_starts_with_biolink_predicate_count"),
-                pl.col("object").str.contains(curie_regex).sum().alias("valid_curie_object_count"),
-                (~pl.col("object").str.contains(curie_regex)).sum().alias("invalid_curie_object_count"),
+                pl.col("subject").str.contains(CURIE_REGEX).sum().alias("valid_curie_subject_count"),
+                (~pl.col("subject").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_subject_count"),
+                pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX).sum().alias("valid_starts_with_biolink_predicate_count"),
+                (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_predicate_count"),
+                pl.col("object").str.contains(CURIE_REGEX).sum().alias("valid_curie_object_count"),
+                (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
             ]
         )
         .collect()
@@ -205,7 +206,7 @@ def validate_kg_edges(edges, output_format, report_file):
             pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
             .select(
                 [
-                    pl.when(~pl.col("subject").str.contains(curie_regex))
+                    pl.when(~pl.col("subject").str.contains(CURIE_REGEX))
                     .then(pl.col("subject"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_curie_subject"),
@@ -221,7 +222,7 @@ def validate_kg_edges(edges, output_format, report_file):
             pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
             .select(
                 [
-                    pl.when(~pl.col("object").str.contains(curie_regex))
+                    pl.when(~pl.col("object").str.contains(CURIE_REGEX))
                     .then(pl.col("object"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_curie_object"),
@@ -237,7 +238,7 @@ def validate_kg_edges(edges, output_format, report_file):
             pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
             .select(
                 [
-                    pl.when(~pl.col("predicate").str.contains(curie_regex))
+                    pl.when(~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX))
                     .then(pl.col("predicate"))
                     .otherwise(pl.lit(None))
                     .alias("invalid_starts_with_biolink_predicate"),
