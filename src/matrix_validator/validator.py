@@ -124,7 +124,6 @@ def validate_kg_nodes(nodes, output_format, report_file):
 
     logger.info("Validating nodes TSV...")
 
-
     counts_df = (
         pl.scan_csv(nodes, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(
