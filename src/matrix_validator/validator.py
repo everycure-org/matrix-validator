@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from typing import Optional
 
 import polars as pl
@@ -10,8 +11,11 @@ from matrix_validator.datamodels import MatrixEdgeSchema, MatrixNodeSchema
 
 logger = logging.getLogger(__name__)
 
-CURIE_REGEX = r"^[A-Za-z_\.]+:.+$"
-STARTS_WITH_BIOLINK_REGEX = r"^biolink:.+$"
+NCNAME_PATTERN = r"[A-Za-z_][A-Za-z0-9\.\-_]*"
+LOCAL_UNIQUE_IDENTIFIER_PATTERN = r"(/[^\s/][^\s]*|[^\s/][^\s]*|[^\s]?)"
+
+CURIE_REGEX = rf"^({NCNAME_PATTERN}?:)?{LOCAL_UNIQUE_IDENTIFIER_PATTERN}$"
+STARTS_WITH_BIOLINK_REGEX = rf"^biolink:{LOCAL_UNIQUE_IDENTIFIER_PATTERN}$"
 
 
 def format_schema_error(error: dict) -> str:
