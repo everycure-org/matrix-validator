@@ -7,6 +7,7 @@ import sys
 from collections import Counter, defaultdict
 
 from tqdm import tqdm
+
 from matrix_validator.validator import Validator
 
 # Increase max field size
