@@ -1,6 +1,12 @@
 """Polars-based validator implementation."""
 
+import logging
+
+import polars as pl
+
 from matrix_validator.validator import Validator
+
+logger = logging.getLogger(__name__)
 
 NCNAME_PATTERN = r"[A-Za-z_][A-Za-z0-9\.\-_]*"
 LOCAL_UNIQUE_IDENTIFIER_PATTERN = r"(/[^\s/][^\s]*|[^\s/][^\s]*|[^\s]?)"
@@ -19,10 +25,10 @@ class ValidatorPolarsImpl(Validator):
     def validate(self, nodes_file_path, edges_file_file_path):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         if nodes_file_path:
-            validate_kg_nodes(nodes_file_path, self.output_format, self.report_file)
+            validate_kg_nodes(nodes_file_path, self.output_format, self.get_report_file())
 
         if edges_file_file_path:
-            validate_kg_edges(edges_file_file_path, self.output_format, self.report_file)
+            validate_kg_edges(edges_file_file_path, self.output_format, self.get_report_file())
 
 
 def validate_kg_nodes(nodes, output_format, report_file):

@@ -50,7 +50,7 @@ lint.extend-ignore = [
     "D212",  # `multi-line-summary-first-line`
     "D203",  # `blank-line-before-docstring`
     ]
-line-length = 120
+line-length = 140
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 lint.fixable = ["ALL"]
