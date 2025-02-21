@@ -2,7 +2,7 @@
 
 import unittest
 
-from matrix_validator.validator import validate_kg
+from matrix_validator.validator_schema import ValidatorPanderaImpl
 
 
 class TestValidate(unittest.TestCase):
@@ -10,4 +10,5 @@ class TestValidate(unittest.TestCase):
 
     def test_version_type(self):
         """Test validation method."""
-        validate_kg(nodes=None, edges=None, output_format="txt", report_file=None)
+        validator = ValidatorPanderaImpl()
+        validator.validate(nodes_file_path=None, edges_file_path=None)
