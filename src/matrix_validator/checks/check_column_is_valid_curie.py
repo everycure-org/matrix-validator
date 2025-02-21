@@ -4,6 +4,7 @@ from matrix_validator.checks import CURIE_REGEX
 
 
 def validate(column, file):
+    """Validate column to be a valid CURIE."""
     violations_df = (
         pl.scan_csv(file, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(

@@ -4,6 +4,7 @@ from matrix_validator.checks import STARTS_WITH_BIOLINK_REGEX
 
 
 def validate(column, file):
+    """Validate column to start with biolink:."""
     violations_df = (
         pl.scan_csv(file, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(

@@ -4,6 +4,7 @@ from matrix_validator.checks import DELIMITED_BY_PIPES
 
 
 def validate(column, file):
+    """Validate Array to be delimited by pipes."""
     violations_df = (
         pl.scan_csv(file, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
         .select(
