@@ -4,7 +4,8 @@ import logging
 
 import polars as pl
 
-from matrix_validator.checks import CURIE_REGEX, DELIMITED_BY_PIPES, STARTS_WITH_BIOLINK_REGEX
+from matrix_validator.checks import CURIE_REGEX, DELIMITED_BY_PIPES, STARTS_WITH_BIOLINK_REGEX, NO_LEADING_WHITESPACE, \
+    NO_TRAILING_WHITESPACE
 from matrix_validator.validator import Validator
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,10 @@ def validate_kg_nodes(nodes, output_format, report_file):
                 (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_category_count"),
                 pl.col("category").str.contains(DELIMITED_BY_PIPES).sum().alias("valid_delimited_by_pipes_category_count"),
                 (~pl.col("category").str.contains(DELIMITED_BY_PIPES)).sum().alias("invalid_delimited_by_pipes_category_count"),
+                pl.col("category").str.contains(NO_LEADING_WHITESPACE).sum().alias("valid_no_leading_whitespace_category_count"),
+                (~pl.col("category").str.contains(NO_LEADING_WHITESPACE)).sum().alias("invalid_no_leading_whitespace_category_count"),
+                pl.col("category").str.contains(NO_TRAILING_WHITESPACE).sum().alias("valid_no_trailing_whitespace_category_count"),
+                (~pl.col("category").str.contains(NO_TRAILING_WHITESPACE)).sum().alias("invalid_no_trailing_whitespace_category_count"),
             ]
         )
         .collect()
@@ -51,6 +56,16 @@ def validate_kg_nodes(nodes, output_format, report_file):
         from matrix_validator.checks.check_column_is_valid_curie import validate
 
         validation_reports.append(validate("id", nodes))
+
+    if counts_df.get_column("invalid_no_leading_whitespace_category_count").item(0) > 0:
+        from matrix_validator.checks.check_column_no_leading_whitespace import validate
+
+        validation_reports.append(validate("category", nodes))
+
+    if counts_df.get_column("invalid_no_trailing_whitespace_category_count").item(0) > 0:
+        from matrix_validator.checks.check_column_no_trailing_whitespace import validate
+
+        validation_reports.append(validate("category", nodes))
 
     if counts_df.get_column("invalid_starts_with_biolink_category_count").item(0) > 0:
         from matrix_validator.checks.check_column_starts_with_biolink import validate
