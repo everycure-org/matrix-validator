@@ -7,9 +7,9 @@ import polars as pl
 from matrix_validator.checks import (
     CURIE_REGEX,
     DELIMITED_BY_PIPES,
-    STARTS_WITH_BIOLINK_REGEX,
     NO_LEADING_WHITESPACE,
     NO_TRAILING_WHITESPACE,
+    STARTS_WITH_BIOLINK_REGEX,
 )
 from matrix_validator.validator import Validator
 
