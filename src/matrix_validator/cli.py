@@ -32,7 +32,7 @@ def get_validator(validator):
 @click.option("-q", "--quiet")
 @click.version_option(__version__)
 def main(verbose: int, quiet: bool):
-    """Run the SSSOM CLI."""
+    """Run the Matrix Validator CLI."""
     logger = _logging.getLogger()
 
     if verbose >= 2:
