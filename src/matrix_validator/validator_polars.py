@@ -9,6 +9,7 @@ from matrix_validator.checks import DELIMITED_BY_PIPES, CURIE_REGEX, STARTS_WITH
 
 logger = logging.getLogger(__name__)
 
+
 class ValidatorPolarsImpl(Validator):
     """Polars-based validator implementation."""
 
@@ -44,19 +45,22 @@ def validate_kg_nodes(nodes, output_format, report_file):
         )
         .collect()
     )
-    
+
     validation_reports = []
 
     if counts_df.get_column("invalid_curie_id_count").item(0) > 0:
         from matrix_validator.checks.check_column_is_valid_curie import validate
+
         validation_reports.append(validate("id", nodes))
 
     if counts_df.get_column("invalid_starts_with_biolink_category_count").item(0) > 0:
         from matrix_validator.checks.check_column_starts_with_biolink import validate
+
         validation_reports.append(validate("category", nodes))
 
     if counts_df.get_column("invalid_delimited_by_pipes_category_count").item(0) > 0:
         from matrix_validator.checks.check_column_is_delimited_by_pipes import validate
+
         validation_reports.append(validate("category", nodes))
 
     # Write validation report
@@ -88,14 +92,17 @@ def validate_kg_edges(edges, output_format, report_file):
 
     if counts_df.get_column("invalid_curie_subject_count").item(0) > 0:
         from matrix_validator.checks.check_column_is_valid_curie import validate
+
         validation_reports.append(validate("subject", edges))
 
     if counts_df.get_column("invalid_curie_object_count").item(0) > 0:
         from matrix_validator.checks.check_column_is_valid_curie import validate
+
         validation_reports.append(validate("object", edges))
 
     if counts_df.get_column("invalid_starts_with_biolink_predicate_count").item(0) > 0:
         from matrix_validator.checks.check_column_starts_with_biolink import validate
+
         validation_reports.append(validate("predicate", edges))
 
     # Write validation report
