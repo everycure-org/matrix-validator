@@ -1,3 +1,5 @@
+"""Polars-based validator check."""
+
 import polars as pl
 
 from matrix_validator.checks import STARTS_WITH_BIOLINK_REGEX
