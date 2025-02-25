@@ -43,6 +43,7 @@ class ValidatorPolarsImpl(Validator):
 
 def get_biolink_model_prefix_keys():
     from . import resources
+
     with il_resources.open_text(resources, "biolink-model.yaml") as file:
         bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
     return list(bl_model_data[0]["prefixes"].keys())
@@ -75,7 +76,7 @@ def validate_kg_nodes(nodes, output_format, report_file):
         )
         .collect()
     )
-    print(counts_df.write_json())
+    # print(counts_df.write_json())
     validation_reports = []
 
     if counts_df.get_column("invalid_curie_id_count").item(0) > 0:
