@@ -4,6 +4,7 @@ import polars as pl
 
 from matrix_validator.checks import DELIMITED_BY_PIPES
 
+
 def validate(column, bm_prefixes: list, file):
     """Validate contains Biolink Model prefix."""
     violations_df = (
