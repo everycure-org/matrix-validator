@@ -128,6 +128,7 @@ def validate_kg_edges(edges, output_format, report_file):
     """Validate a knowledge graph using optional edges TSV files."""
     logger.info("Validating edges TSV...")
 
+    bm_prefixes = get_biolink_model_prefix_keys()
     bm_knowledge_level_keys = get_biolink_model_knowledge_level_keys()
     bm_agent_type_keys = get_biolink_model_agent_type_keys()
 
@@ -138,10 +139,14 @@ def validate_kg_edges(edges, output_format, report_file):
                 # we only really care about the invalids
                 # pl.col("subject").str.contains(CURIE_REGEX).sum().alias("valid_curie_subject_count"),
                 (~pl.col("subject").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_subject_count"),
+                # pl.col("subject").str.contains_any(bm_prefixes).sum().alias("valid_contains_biolink_model_prefix_subject_count"),
+                (~pl.col("subject").str.contains_any(bm_prefixes)).sum().alias("invalid_contains_biolink_model_prefix_subject_count"),
                 # pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX).sum().alias("valid_starts_with_biolink_predicate_count"),
                 (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_predicate_count"),
                 # pl.col("object").str.contains(CURIE_REGEX).sum().alias("valid_curie_object_count"),
                 (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
+                # pl.col("object").str.contains_any(bm_prefixes).sum().alias("valid_contains_biolink_model_prefix_object_count"),
+                (~pl.col("object").str.contains_any(bm_prefixes)).sum().alias("invalid_contains_biolink_model_prefix_object_count"),
                 # pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys).sum().alias("valid_contains_biolink_model_knowledge_level_count"),
                 (~pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys))
                 .sum()
@@ -160,8 +165,14 @@ def validate_kg_edges(edges, output_format, report_file):
     if counts_df.get_column("invalid_curie_subject_count").item(0) > 0:
         validation_reports.append(check_column_is_valid_curie("subject", edges))
 
+    if counts_df.get_column("invalid_contains_biolink_model_prefix_subject_count").item(0) > 0:
+        validation_reports.append(check_column_contains_biolink_model_prefix("subject", bm_prefixes, edges))
+
     if counts_df.get_column("invalid_curie_object_count").item(0) > 0:
         validation_reports.append(check_column_is_valid_curie("object", edges))
+
+    if counts_df.get_column("invalid_contains_biolink_model_prefix_object_count").item(0) > 0:
+        validation_reports.append(check_column_contains_biolink_model_prefix("object", bm_prefixes, edges))
 
     if counts_df.get_column("invalid_starts_with_biolink_predicate_count").item(0) > 0:
         validation_reports.append(check_column_starts_with_biolink("predicate", edges))
