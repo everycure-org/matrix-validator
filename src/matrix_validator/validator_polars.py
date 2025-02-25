@@ -14,7 +14,12 @@ from matrix_validator.checks import (
     STARTS_WITH_BIOLINK_REGEX,
 )
 from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
-from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import validate as check_column_contains_biolink_model_knowledge_level
+from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import (
+    validate as check_column_contains_biolink_model_knowledge_level,
+)
+from matrix_validator.checks.check_column_contains_biolink_model_agent_type import (
+    validate as check_column_contains_biolink_model_agent_type,
+)
 from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
 from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
 from matrix_validator.checks.check_column_no_leading_whitespace import validate as check_column_no_leading_whitespace
@@ -56,6 +61,15 @@ def get_biolink_model_knowledge_level_keys():
     with il_resources.open_text(resources, "biolink-model.yaml") as file:
         bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
     return list(bl_model_data[0]["enums"]["KnowledgeLevelEnum"]["permissible_values"].keys())
+
+
+def get_biolink_model_agent_type_keys():
+    from . import resources
+
+    with il_resources.open_text(resources, "biolink-model.yaml") as file:
+        bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
+    return list(bl_model_data[0]["enums"]["AgentTypeEnum"]["permissible_values"].keys())
+
 
 def validate_kg_nodes(nodes, output_format, report_file):
     """Validate a knowledge graph using optional nodes TSV files."""
@@ -115,7 +129,7 @@ def validate_kg_edges(edges, output_format, report_file):
     logger.info("Validating edges TSV...")
 
     bm_knowledge_level_keys = get_biolink_model_knowledge_level_keys()
-    print(bm_knowledge_level_keys)
+    bm_agent_type_keys = get_biolink_model_agent_type_keys()
 
     counts_df = (
         pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
@@ -128,8 +142,14 @@ def validate_kg_edges(edges, output_format, report_file):
                 (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_predicate_count"),
                 # pl.col("object").str.contains(CURIE_REGEX).sum().alias("valid_curie_object_count"),
                 (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
-                # pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys).sum().alias("invalid_contains_biolink_model_knowledge_level_count"),
-                (~pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys)).sum().alias("invalid_contains_biolink_model_knowledge_level_count"),
+                # pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys).sum().alias("valid_contains_biolink_model_knowledge_level_count"),
+                (~pl.col("knowledge_level").str.contains_any(bm_knowledge_level_keys))
+                .sum()
+                .alias("invalid_contains_biolink_model_knowledge_level_count"),
+                # pl.col("agent_type").str.contains_any(bm_knowledge_level_keys).sum().alias("valid_contains_biolink_model_agent_type_count"),
+                (~pl.col("agent_type").str.contains_any(bm_knowledge_level_keys))
+                .sum()
+                .alias("invalid_contains_biolink_model_agent_type_count"),
             ]
         )
         .collect()
@@ -148,6 +168,9 @@ def validate_kg_edges(edges, output_format, report_file):
 
     if counts_df.get_column("invalid_contains_biolink_model_knowledge_level_count").item(0) > 0:
         validation_reports.append(check_column_contains_biolink_model_knowledge_level("knowledge_level", bm_knowledge_level_keys, edges))
+
+    if counts_df.get_column("invalid_contains_biolink_model_agent_type_count").item(0) > 0:
+        validation_reports.append(check_column_contains_biolink_model_agent_type("agent_type", bm_agent_type_keys, edges))
 
     # Write validation report
     write_report(output_format, report_file, validation_reports)
