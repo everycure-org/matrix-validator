@@ -4,6 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from importlib import resources as il_resources
 
+import requests
 import yaml
 from yaml import SafeLoader
 
@@ -52,17 +53,19 @@ class Validator(ABC):
 
     def get_biolink_model_prefix_keys(self):
         """Get biolink model prefix keys."""
-        return list(self.bl_model_data[0]["prefixes"].keys())
+        more_better_prefixes = list(requests.get("https://w3id.org/biolink/biolink-model-prefix-map.json").json().keys())
+        # why_not_same_prefixes = list(self.bl_model_data[0]["prefixes"].keys())
+        # difference = list(set(b) - set(a))
+        # print(difference)
+        return more_better_prefixes
 
     def get_biolink_model_knowledge_level_keys(self):
         """Get biolink model knowledge_level keys."""
         return list(self.bl_model_data[0]["enums"]["KnowledgeLevelEnum"]["permissible_values"].keys())
-        # return [k.value for k in KnowledgeLevelEnum]
 
     def get_biolink_model_agent_type_keys(self):
         """Get biolink model agent_type keys."""
         return list(self.bl_model_data[0]["enums"]["AgentTypeEnum"]["permissible_values"].keys())
-        # return [k.value for k in AgentTypeEnum]
 
     def write_report(self, validation_reports):
         """Write the validation report to a file."""
