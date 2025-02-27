@@ -1,10 +1,11 @@
 """Validator abstract class."""
 
 import os
-import yaml
-from yaml import SafeLoader
 from abc import ABC, abstractmethod
 from importlib import resources as il_resources
+
+import yaml
+from yaml import SafeLoader
 
 
 class Validator(ABC):
