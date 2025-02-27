@@ -53,11 +53,11 @@ class Validator(ABC):
 
     def get_biolink_model_prefix_keys(self):
         """Get biolink model prefix keys."""
-        more_better_prefixes = list(requests.get("https://w3id.org/biolink/biolink-model-prefix-map.json").json().keys())
-        # why_not_same_prefixes = list(self.bl_model_data[0]["prefixes"].keys())
-        # difference = list(set(b) - set(a))
-        # print(difference)
-        return more_better_prefixes
+        try:
+            prefixes = list(requests.get("https://w3id.org/biolink/biolink-model-prefix-map.json", timeout=10).json().keys())
+        except:
+            prefixes = list(self.bl_model_data[0]["prefixes"].keys())
+        return prefixes
 
     def get_biolink_model_knowledge_level_keys(self):
         """Get biolink model knowledge_level keys."""
