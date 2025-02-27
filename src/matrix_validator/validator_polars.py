@@ -3,8 +3,6 @@
 import logging
 
 import polars as pl
-import yaml
-from yaml import SafeLoader
 from matrix_validator.checks import (
     CURIE_REGEX,
     DELIMITED_BY_PIPES,
@@ -26,7 +24,6 @@ from matrix_validator.checks.check_column_no_leading_whitespace import validate 
 from matrix_validator.checks.check_column_no_trailing_whitespace import validate as check_column_no_trailing_whitespace
 from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.validator import Validator
-from yaml import SafeLoader
 
 logger = logging.getLogger(__name__)
 
