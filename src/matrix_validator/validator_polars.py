@@ -5,7 +5,6 @@ import logging
 import polars as pl
 import yaml
 from yaml import SafeLoader
-from importlib import resources as il_resources
 from matrix_validator.checks import (
     CURIE_REGEX,
     DELIMITED_BY_PIPES,
@@ -43,17 +42,21 @@ class ValidatorPolarsImpl(Validator):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
 
+        bm_prefixes = self.get_biolink_model_prefix_keys()
+        bm_knowledge_level_keys = self.get_biolink_model_knowledge_level_keys()
+        bm_agent_type_keys = self.get_biolink_model_agent_type_keys()
+
         if nodes_file_path:
-            validation_reports.extend(validate_kg_nodes(nodes_file_path))
+            validation_reports.extend(validate_kg_nodes(bm_prefixes, nodes_file_path))
 
         if edges_file_path:
-            validation_reports.extend(validate_kg_edges(edges_file_path))
+            validation_reports.extend(validate_kg_edges(bm_prefixes, bm_knowledge_level_keys, bm_agent_type_keys, edges_file_path))
 
         if nodes_file_path and edges_file_path:
             validation_reports.extend(validate_node_ids_in_edges(nodes_file_path, edges_file_path))
 
         # Write validation report
-        write_report(self.output_format, self.get_report_file(), validation_reports)
+        self.write_report(validation_reports)
         logging.info(f"Validation report written to {self.get_report_file()}")
 
 
@@ -82,11 +85,9 @@ def validate_node_ids_in_edges(nodes, edges):
     return validation_reports
 
 
-def validate_kg_nodes(nodes):
+def validate_kg_nodes(bm_prefixes, nodes):
     """Validate a knowledge graph using optional nodes TSV files."""
     logger.info("Validating nodes TSV...")
-
-    bm_prefixes = get_biolink_model_prefix_keys()
 
     counts_df = (
         pl.scan_csv(nodes, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
@@ -126,13 +127,9 @@ def validate_kg_nodes(nodes):
     return validation_reports
 
 
-def validate_kg_edges(edges):
+def validate_kg_edges(bm_prefixes, bm_knowledge_level_keys, bm_agent_type_keys, edges):
     """Validate a knowledge graph using optional edges TSV files."""
     logger.info("Validating edges TSV...")
-
-    bm_prefixes = get_biolink_model_prefix_keys()
-    bm_knowledge_level_keys = get_biolink_model_knowledge_level_keys()
-    bm_agent_type_keys = get_biolink_model_agent_type_keys()
 
     counts_df = (
         pl.scan_csv(edges, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
@@ -178,37 +175,3 @@ def validate_kg_edges(edges):
         validation_reports.append(check_column_contains_biolink_model_agent_type("agent_type", bm_agent_type_keys, edges))
 
     return validation_reports
-
-
-def write_report(output_format, report_file, validation_reports):
-    """Write the validation report to a file."""
-    if report_file:
-        with open(report_file, "w") as report:
-            if output_format == "txt":
-                report.write("\n".join(validation_reports))
-            elif output_format == "md":
-                report.write("\n\n".join([f"## {line}" for line in validation_reports]))
-
-
-def get_biolink_model_prefix_keys():
-    from . import resources
-
-    with il_resources.open_text(resources, "biolink-model.yaml") as file:
-        bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
-    return list(bl_model_data[0]["prefixes"].keys())
-
-
-def get_biolink_model_knowledge_level_keys():
-    from . import resources
-
-    with il_resources.open_text(resources, "biolink-model.yaml") as file:
-        bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
-    return list(bl_model_data[0]["enums"]["KnowledgeLevelEnum"]["permissible_values"].keys())
-
-
-def get_biolink_model_agent_type_keys():
-    from . import resources
-
-    with il_resources.open_text(resources, "biolink-model.yaml") as file:
-        bl_model_data = list(yaml.load_all(file, Loader=SafeLoader))
-    return list(bl_model_data[0]["enums"]["AgentTypeEnum"]["permissible_values"].keys())
