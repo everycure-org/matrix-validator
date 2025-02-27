@@ -4,7 +4,6 @@ import os
 import yaml
 from yaml import SafeLoader
 from abc import ABC, abstractmethod
-from biolink_model.datamodel.pydanticmodel_v2 import KnowledgeLevelEnum, AgentTypeEnum
 from importlib import resources as il_resources
 
 

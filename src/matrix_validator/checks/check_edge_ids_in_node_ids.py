@@ -13,10 +13,10 @@ def validate(edge_ids: list, file):
                 pl.when(~pl.col(column).str.contains_any(edge_ids))
                 .then(pl.col(column))
                 .otherwise(pl.lit(None))
-                .alias(f"invalid_edge_ids_in_node_ids"),
+                .alias("invalid_edge_ids_in_node_ids"),
             ]
         )
-        .filter(pl.col(f"invalid_edge_ids_in_node_ids").is_not_null())
+        .filter(pl.col("invalid_edge_ids_in_node_ids").is_not_null())
         .collect()
     )
     return violations_df.write_ndjson()
