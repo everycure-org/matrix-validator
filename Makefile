@@ -4,8 +4,6 @@ VERBOSE=-vvv
 
 install:
 	poetry install
-	mkdir -p ./src/matrix_validator/resources
-	curl -L https://raw.githubusercontent.com/biolink/biolink-model/refs/heads/master/biolink-model.yaml -o ./src/matrix_validator/resources/biolink-model.yaml
 
 prepare_tests:
 	mkdir -p tmp
