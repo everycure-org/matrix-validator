@@ -3,6 +3,7 @@
 import logging
 
 import polars as pl
+
 from matrix_validator.checks import (
     CURIE_REGEX,
     DELIMITED_BY_PIPES,
@@ -10,19 +11,19 @@ from matrix_validator.checks import (
     NO_TRAILING_WHITESPACE,
     STARTS_WITH_BIOLINK_REGEX,
 )
-from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
-from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import (
-    validate as check_column_contains_biolink_model_knowledge_level,
-)
 from matrix_validator.checks.check_column_contains_biolink_model_agent_type import (
     validate as check_column_contains_biolink_model_agent_type,
 )
-from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
-from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
+from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import (
+    validate as check_column_contains_biolink_model_knowledge_level,
+)
 from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
+from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
+from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
 from matrix_validator.checks.check_column_no_leading_whitespace import validate as check_column_no_leading_whitespace
 from matrix_validator.checks.check_column_no_trailing_whitespace import validate as check_column_no_trailing_whitespace
 from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
+from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
 from matrix_validator.validator import Validator
 
 logger = logging.getLogger(__name__)
