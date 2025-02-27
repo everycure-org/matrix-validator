@@ -55,7 +55,7 @@ class Validator(ABC):
         """Get biolink model prefix keys."""
         try:
             prefixes = list(requests.get("https://w3id.org/biolink/biolink-model-prefix-map.json", timeout=10).json().keys())
-        except:
+        except Exception:
             prefixes = list(self.bl_model_data[0]["prefixes"].keys())
         return prefixes
 
