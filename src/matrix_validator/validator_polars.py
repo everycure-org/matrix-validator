@@ -51,14 +51,14 @@ class ValidatorPolarsImpl(Validator):
             validation_reports.extend(validate_kg_edges(bm_prefixes, bm_knowledge_level_keys, bm_agent_type_keys, edges_file_path))
 
         if nodes_file_path and edges_file_path:
-            validation_reports.extend(validate_node_ids_in_edges(nodes_file_path, edges_file_path))
+            validation_reports.extend(validate_nodes_and_edges(nodes_file_path, edges_file_path))
 
         # Write validation report
         self.write_report(validation_reports)
         logging.info(f"Validation report written to {self.get_report_file()}")
 
 
-def validate_node_ids_in_edges(nodes, edges):
+def validate_nodes_and_edges(nodes, edges):
     """Validate a knowledge graph nodes vs edges."""
     logger.info("Validating nodes & edges")
 
