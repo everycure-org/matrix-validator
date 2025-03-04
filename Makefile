@@ -15,9 +15,8 @@ test_small_%: prepare_tests
 		--nodes tests/data/testdata_robokop-kg_nodes.tsv
 
 test_large_%: prepare_tests
-	$(RUN) $(TIMECMD) matrix-validator $(VERBOSE) validate \
+	$(RUN) $(TIMECMD) matrix-validator $(VERBOSE) $* \
 		--report-dir tmp/ \
-		--validator $* \
 		--edges data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_edges.tsv \
 		--nodes data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_nodes.tsv
 
