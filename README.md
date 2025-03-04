@@ -13,9 +13,8 @@ pip install matrix-validator
 Run the validator:
 
 ```
-matrix-validator validate \
+matrix-validator python \
 		--report-dir tmp/ \
-		--validator python \
 		--edges abc_edges.tsv \
 		--nodes abc_nodes.tsv
 ```
