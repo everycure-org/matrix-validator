@@ -530,7 +530,7 @@ def load_node_ids(nodes_file, violations, found_unknown_prefixes):
             # Check structural row length
             structural_issue = check_row_structural(row, num_header_cols)
             if structural_issue:
-                record_violation(violations, "Inconsistent columns", f"Line {line_idx+1} (1-based) {structural_issue}")
+                record_violation(violations, "Inconsistent columns", f"Line {line_idx + 1} (1-based) {structural_issue}")
                 continue
 
             # Check cell-level
@@ -540,7 +540,7 @@ def load_node_ids(nodes_file, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         issue,  # "Leading or trailing whitespace" or "Embedded TAB character"
-                        f"Nodes file line {line_idx+1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
+                        f"Nodes file line {line_idx + 1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
                     )
 
             # Collect node ID if present
@@ -592,7 +592,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
             # Check structural row length
             structural_issue = check_row_structural(row, num_header_cols)
             if structural_issue:
-                record_violation(violations, "Inconsistent columns", f"Line {line_idx+1} {structural_issue}")
+                record_violation(violations, "Inconsistent columns", f"Line {line_idx + 1} {structural_issue}")
                 continue
 
             # Cell-level checks
@@ -602,7 +602,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         issue,
-                        f"Edges file line {line_idx+1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
+                        f"Edges file line {line_idx + 1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
                     )
 
             # Check subject/object membership + prefix
@@ -612,7 +612,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         "Edge subject not found in node IDs",
-                        f"Line {line_idx+1} subject '{subj}' not present in nodes file",
+                        f"Line {line_idx + 1} subject '{subj}' not present in nodes file",
                     )
                 check_curie_prefix(subj, found_unknown_prefixes)
 
@@ -622,7 +622,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         "Edge object not found in node IDs",
-                        f"Line {line_idx+1} object '{obj}' not present in nodes file",
+                        f"Line {line_idx + 1} object '{obj}' not present in nodes file",
                     )
                 check_curie_prefix(obj, found_unknown_prefixes)
 
@@ -678,7 +678,7 @@ class ValidatorPurePythonImpl(Validator):
         """Create a new instance of the pure python-based validator."""
         super().__init__()
 
-    def validate(self, nodes_file_path, edges_file_file_path):
+    def validate(self, nodes_file_path, edges_file_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         # Track all rule-based violations in this dictionary:
         #   { rule_name: { "count": int, "examples": [ ... ] }, ... }
