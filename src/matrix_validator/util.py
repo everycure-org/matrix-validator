@@ -1,10 +1,11 @@
 """Utilities for the matrix validator."""
 
-import polars as pl
 from importlib import resources as il_resources
-from biolink_model import schema
+
+import polars as pl
 import requests
 import yaml
+from biolink_model import schema
 from yaml import SafeLoader
 
 

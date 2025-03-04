@@ -5,13 +5,13 @@ from functools import wraps
 
 import click
 
-import matrix_validator
-from matrix_validator import __version__, validator_purepython, validator_polars, validator_schema
+from matrix_validator import __version__, validator_polars, validator_purepython, validator_schema
 
 logger = _logging.getLogger(__name__)
 
 
 def common_options(f):
+    """Provide common click options used in various subcommands."""
     @wraps(f)
     @click.option("--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
     @click.option("--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
