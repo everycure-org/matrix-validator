@@ -12,6 +12,7 @@ logger = _logging.getLogger(__name__)
 
 def common_options(f):
     """Provide common click options used in various subcommands."""
+
     @wraps(f)
     @click.option("--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
     @click.option("--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
