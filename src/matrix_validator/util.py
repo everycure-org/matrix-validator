@@ -1,12 +1,11 @@
 """Utilities for the matrix validator."""
+
 import json
 from importlib import resources as il_resources
 
 import polars as pl
-import requests
 import yaml
-from biolink_model import schema
-from biolink_model import prefixmaps
+from biolink_model import prefixmaps, schema
 from yaml import SafeLoader
 
 
