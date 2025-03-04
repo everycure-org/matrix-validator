@@ -9,9 +9,8 @@ prepare_tests:
 	mkdir -p tmp
 
 test_small_%: prepare_tests
-	$(RUN) $(TIMECMD) matrix-validator $(VERBOSE) validate \
+	$(RUN) $(TIMECMD) matrix-validator $(VERBOSE) $*  \
 		--report-dir tmp/ \
-		--validator $* \
 		--edges tests/data/testdata_robokop-kg_edges.tsv \
 		--nodes tests/data/testdata_robokop-kg_nodes.tsv
 
@@ -22,7 +21,7 @@ run_small_tests:
 
 test_large:
 	mkdir -p tmp
-	$(RUN) /usr/bin/time -l matrix-validate-kg -vvv \
+	$(RUN) /usr/bin/time -l matrix-validator python $(VERBOSE) \
 		--report tmp/report.txt \
 		--edges data/data_01_RAW_KGs_robokop-kg_6fce5de1f1332b19_edges.tsv \
 		--nodes data/data_01_RAW_KGs_robokop-kg_6fce5de1f1332b19_nodes.tsv
