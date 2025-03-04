@@ -1,11 +1,12 @@
 """Utilities for the matrix validator."""
-
+import json
 from importlib import resources as il_resources
 
 import polars as pl
 import requests
 import yaml
 from biolink_model import schema
+from biolink_model import prefixmaps
 from yaml import SafeLoader
 
 
@@ -20,11 +21,7 @@ def read_tsv_as_strings(file_path):
 
 def get_biolink_model_prefix_keys():
     """Get biolink model prefix keys."""
-    try:
-        prefixes = list(requests.get("https://w3id.org/biolink/biolink-model-prefix-map.json", timeout=10).json().keys())
-    except Exception:
-        bl_model_data = list(yaml.load_all(il_resources.read_text(schema, "biolink_model.yaml"), Loader=SafeLoader))
-        prefixes = list(bl_model_data[0]["prefixes"].keys())
+    prefixes = list(json.loads(il_resources.read_text(prefixmaps, "biolink-model-prefix-map.json")).keys())
     return prefixes
 
 

@@ -16,7 +16,7 @@ polars-lts-cpu = "^1.23.0"
 importlib-metadata = ">=8.2.0"
 pandera = "^0.22.1"
 tqdm = "*"
-biolink-model = "^4.2"
+biolink-model = "4.2.6rc4"
 patito = "0.8.3"
 
 [tool.poetry.group.dev.dependencies]

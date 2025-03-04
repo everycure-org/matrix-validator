@@ -79,13 +79,13 @@ lxml = ["lxml"]
 
 [[package]]
 name = "biolink-model"
-version = "4.2.5"
+version = "4.2.6rc4"
 description = "The Biolink Model is a high-level data model designed to standardize types and relationships in biological knowledgebases."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "biolink_model-4.2.5-py3-none-any.whl", hash = "sha256:949079f33daa57d1a212fc756621bcc12746ec24bd85fd7fe2587848d18e4896"},
-    {file = "biolink_model-4.2.5.tar.gz", hash = "sha256:1b8eb43ccbe133da52efacc90dd9599edc02db9d9be985e02cfd7b66b9d27d0b"},
+    {file = "biolink_model-4.2.6rc4-py3-none-any.whl", hash = "sha256:b22aeb38a70fee451ac36fcc25b15a5256633c640529a02d16b3bd4a8e61e870"},
+    {file = "biolink_model-4.2.6rc4.tar.gz", hash = "sha256:044e0e55c0a575888e5bb8e1ae14c76d41a8ae0e20e96a008677e6392f38fd96"},
 ]
 
 [package.dependencies]
@@ -1015,18 +1015,18 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "polars"
-version = "1.23.0"
+version = "1.24.0"
 description = "Blazingly fast DataFrame library"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "polars-1.23.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:d9d344958cb9bfe1bd42c1af910cb000c0dfa2892b849f2cd35649e0bcd10fab"},
-    {file = "polars-1.23.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:37ca01c31909ead40f32eb275b578c576bdd2e93730a07f3a38688b1c84f6ca8"},
-    {file = "polars-1.23.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3cb0b944ddfc13eefa3b8c244cba39790226fd11c861cbba9db2a1cbe033387a"},
-    {file = "polars-1.23.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:655d296078c99cd3f5cefc3ec1f1447676a64f0d7dcd2f89d919f19bf84fa53f"},
-    {file = "polars-1.23.0-cp39-abi3-win_amd64.whl", hash = "sha256:b774f04d77ed4153d9539e546db5ad6ff4757c79dfe981e22400eb59299c5493"},
-    {file = "polars-1.23.0-cp39-abi3-win_arm64.whl", hash = "sha256:701df6381665c56da18704305119ce73983b1bead3378fbc8fac7ffd24817e93"},
-    {file = "polars-1.23.0.tar.gz", hash = "sha256:4305e87e4c48bc4ae8401a055fb5431c4c0c4e88855e648927269f31e6d338f0"},
+    {file = "polars-1.24.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:563b99a6597fe77a3c89d478e4a6fb49c063f44ef84d4adefe490e14626e2f99"},
+    {file = "polars-1.24.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:6ad64d938d60b7fda39b60892ef67bc6a9942e0c7170db593a65d019e8730b09"},
+    {file = "polars-1.24.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:331e737465b8d954bec51e6906bdc6e979a6ee52f97ffe5e8d0c10794a46bfd9"},
+    {file = "polars-1.24.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:3c6c774aebdd5cd601839594986648789352f72b8893f4b7e34224e75b060c8d"},
+    {file = "polars-1.24.0-cp39-abi3-win_amd64.whl", hash = "sha256:a5a473ff44fe1b9e3e7a9013a9321efe841d858e89cf33d424e6f3fef3ea4d5e"},
+    {file = "polars-1.24.0-cp39-abi3-win_arm64.whl", hash = "sha256:5ea781ca8e0a39c3b677171dbd852e5fa2d5c53417b5fbd69d711b6044a49eaa"},
+    {file = "polars-1.24.0.tar.gz", hash = "sha256:6e7553789495081c998f5e4ad4ebc7e19e970a9cc83326d40461564e85ad226d"},
 ]
 
 [package.extras]
@@ -1042,7 +1042,7 @@ excel = ["polars[calamine,openpyxl,xlsx2csv,xlsxwriter]"]
 fsspec = ["fsspec"]
 gpu = ["cudf-polars-cu12"]
 graph = ["matplotlib"]
-iceberg = ["pyiceberg (>=0.5.0)"]
+iceberg = ["pyiceberg (>=0.7.1)"]
 numpy = ["numpy (>=1.16.0)"]
 openpyxl = ["openpyxl (>=3.0.0)"]
 pandas = ["pandas", "polars[pyarrow]"]
@@ -1058,18 +1058,18 @@ xlsxwriter = ["xlsxwriter"]
 
 [[package]]
 name = "polars-lts-cpu"
-version = "1.23.0"
+version = "1.24.0"
 description = "Blazingly fast DataFrame library"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:ba5668d1a6a5218d03c77266489eb390504f48d461c862f17578aab24636098f"},
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:7b7e6acb361a852d0a57ccc0663663281c99e31a62d0afe48c272d0637edfb31"},
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d209b9348e129cf17b3a5b8efe5c8968c4420f06570080f0c47edae03a1a37e"},
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:c3b623484dedc977e00925b811e7e8ab32e90b00989ec97cd759eabae913c599"},
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-win_amd64.whl", hash = "sha256:c7f1761a85ed6d287d9303096c98968b7626e0f4dedb4a747801bbcd94616ad9"},
-    {file = "polars_lts_cpu-1.23.0-cp39-abi3-win_arm64.whl", hash = "sha256:c0e4f08e76346d9c2b5fee5ad9bf3f7ef91f9c81567785e5d8f6b06cf32c385a"},
-    {file = "polars_lts_cpu-1.23.0.tar.gz", hash = "sha256:b2e77caf0b0a0ebc4bb17a51231cbb9e70d55bc474d60af9d9b9e178e951aa3c"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:9cfd790c05fbe7a03ac3846b89d734c2e033e80be1bd349495a08697206cde71"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:6be1426b328aa8bcf34fc08231b5fbd8bc69ba8de1526ae706cd7d5e3305ec46"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9b301fde1d3f83643a79cbc8673b971efb4ee415afa5b1211fdd9ff4f8de7f47"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:b620352b16b0896a428cb78473ad575941ec920b4f75830246b063d406cee82d"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-win_amd64.whl", hash = "sha256:47138b31264cd05f6d1dd70682c7389a10c834e6f3077546cf5ab5b2b855a78a"},
+    {file = "polars_lts_cpu-1.24.0-cp39-abi3-win_arm64.whl", hash = "sha256:79603404011ef5edab31dc06af37a56d90be9e9647e099049c2690fa11f3824b"},
+    {file = "polars_lts_cpu-1.24.0.tar.gz", hash = "sha256:e9d8401f5dcdb8564512e4ba874ed8899b2e0c4ad296de5723f8f3df21c85cb2"},
 ]
 
 [package.extras]
@@ -1085,7 +1085,7 @@ excel = ["polars-lts-cpu[calamine,openpyxl,xlsx2csv,xlsxwriter]"]
 fsspec = ["fsspec"]
 gpu = ["cudf-polars-cu12"]
 graph = ["matplotlib"]
-iceberg = ["pyiceberg (>=0.5.0)"]
+iceberg = ["pyiceberg (>=0.7.1)"]
 numpy = ["numpy (>=1.16.0)"]
 openpyxl = ["openpyxl (>=3.0.0)"]
 pandas = ["pandas", "polars-lts-cpu[pyarrow]"]
@@ -1330,13 +1330,13 @@ testing = ["covdefaults (>=2.3)", "pytest (>=8.3.4)", "pytest-cov (>=6)", "pytes
 
 [[package]]
 name = "pytest"
-version = "8.3.4"
+version = "8.3.5"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.3.4-py3-none-any.whl", hash = "sha256:50e16d954148559c9a74109af1eaf0c945ba2d8f30f0a3d3335edde19788b6f6"},
-    {file = "pytest-8.3.4.tar.gz", hash = "sha256:965370d062bce11e73868e0335abac31b4d3de0e82f4007408d242b4f8610761"},
+    {file = "pytest-8.3.5-py3-none-any.whl", hash = "sha256:c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820"},
+    {file = "pytest-8.3.5.tar.gz", hash = "sha256:f4efe70cc14e511565ac476b57c279e12a855b11f48f212af1080ef2263d3845"},
 ]
 
 [package.dependencies]
@@ -2194,4 +2194,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fdcf15df8430a5e0cdb702c7dc35feb8d1decc20af0021dab13800f555552e1b"
+content-hash = "bf2d596c545bb5391f23986e1346d8e004a708cfa31d61cf07e6fbd5429c0229"
