@@ -14,15 +14,19 @@ test_small_%: prepare_tests
 		--edges tests/data/testdata_robokop-kg_edges.tsv \
 		--nodes tests/data/testdata_robokop-kg_nodes.tsv
 
+test_large_%: prepare_tests
+	$(RUN) $(TIMECMD) matrix-validator $(VERBOSE) validate \
+		--report-dir tmp/ \
+		--validator $* \
+		--edges data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_edges.tsv \
+		--nodes data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_nodes.tsv
+
 run_small_tests:
 	$(MAKE) test_small_pandera
 	$(MAKE) test_small_python
 	$(MAKE) test_small_polars
 
-test_large:
-	mkdir -p tmp
-	$(RUN) /usr/bin/time -l matrix-validator python $(VERBOSE) \
-		--report tmp/report.txt \
-		--edges data/data_01_RAW_KGs_robokop-kg_6fce5de1f1332b19_edges.tsv \
-		--nodes data/data_01_RAW_KGs_robokop-kg_6fce5de1f1332b19_nodes.tsv
-	#cat tmp/report.txt
+run_large_tests:
+	$(MAKE) test_large_pandera
+	$(MAKE) test_large_python
+	$(MAKE) test_large_polars

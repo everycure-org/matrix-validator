@@ -138,3 +138,6 @@ data/data_01_RAW_KGs_rtx_kg2_v2.10.0_nodes.tsv
 data/data_01_RAW_KGs_spoke_V5_edges.tsv
 data/data_01_RAW_KGs_spoke_V5_nodes.tsv
 src/matrix_validator/resources/biolink-model.yaml
+data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_edges.tsv
+data/data_01_RAW_KGs_robokop-kg_23f46efa87c2bad7_robokop_23f46efa87c2bad7_nodes.tsv
+data/data_01_RAW_KGs_rtx_kg2_v2.10.0_validated_rtx-kg2_2.10.0_nodes.tsv
