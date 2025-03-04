@@ -3,19 +3,18 @@
 import polars as pl
 
 
-def validate(column, bm_prefixes: list, file):
+def validate(df, column, bm_prefixes: list):
     """Validate contains Biolink Model prefix."""
     violations_df = (
-        pl.scan_csv(file, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
-        .select(
+        df.select(
             [
-                pl.when(~pl.col(column).str.contains_any(bm_prefixes))
+                pl.when(~pl.col(column).str.contains_any(bm_prefixes, ascii_case_insensitive=True))
                 .then(pl.col(column))
                 .otherwise(pl.lit(None))
                 .alias(f"invalid_contains_biolink_model_prefix_{column}"),
             ]
         )
         .filter(pl.col(f"invalid_contains_biolink_model_prefix_{column}").is_not_null())
-        .collect()
+        .unique()
     )
     return violations_df.write_ndjson()

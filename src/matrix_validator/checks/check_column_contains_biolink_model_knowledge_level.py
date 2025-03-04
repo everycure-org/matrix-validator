@@ -3,11 +3,10 @@
 import polars as pl
 
 
-def validate(column, bm_knowledge_levels: list, file):
+def validate(df, column, bm_knowledge_levels: list):
     """Validate contains Biolink Model Knowledge Level."""
     violations_df = (
-        pl.scan_csv(file, separator="\t", truncate_ragged_lines=True, has_header=True, ignore_errors=True)
-        .select(
+        df.select(
             [
                 pl.when(~pl.col(column).str.contains_any(bm_knowledge_levels))
                 .then(pl.col(column))
@@ -16,6 +15,6 @@ def validate(column, bm_knowledge_levels: list, file):
             ]
         )
         .filter(pl.col(f"invalid_contains_biolink_model_knowledge_level_{column}").is_not_null())
-        .collect()
+        .unique()
     )
     return violations_df.write_ndjson()
