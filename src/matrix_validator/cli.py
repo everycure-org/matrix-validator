@@ -1,4 +1,5 @@
 """CLI for matrix-validator."""
+
 import logging as _logging
 import sys
 from functools import wraps
@@ -36,7 +37,6 @@ def common_options(f):
 @click.version_option(__version__)
 def main(verbose: int, quiet: bool):
     """Run the Matrix Validator CLI."""
-    logger = _logging.getLogger()
     if verbose >= 2:
         _logging.basicConfig(stream=sys.stdout, level=_logging.DEBUG)
     elif verbose == 1:

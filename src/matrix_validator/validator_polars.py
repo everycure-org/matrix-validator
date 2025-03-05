@@ -112,7 +112,11 @@ def validate_nodes_and_edges(nodes, edges, limit):
     """Validate a knowledge graph nodes vs edges."""
     logger.info("Validating nodes & edges")
 
-    edges_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select([pl.col("subject"), pl.col("object")]).collect()
+    edges_df = (
+        pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
+        .select([pl.col("subject"), pl.col("object")])
+        .collect()
+    )
     edge_ids = (
         pl.concat(
             items=[edges_df.select(pl.col("subject").alias("id")), edges_df.select(pl.col("object").alias("id"))],
