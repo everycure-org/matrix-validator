@@ -33,54 +33,54 @@ from matrix_validator.validator import Validator
 logger = logging.getLogger(__name__)
 
 BIOLINK_PREFIX_KEYS = util.get_biolink_model_prefix_keys()
-BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_prefix_keys()
-BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_prefix_keys()
+BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
+BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_agent_type_keys()
 
 
 class EdgeSchema(pt.Model):
     """EdgeSchema derived from Patito."""
 
-    # subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
-    # predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
-    # object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
-    # knowledge_level: Optional[str] = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
-    # agent_type: Optional[str] = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
-    subject: str
-    predicate: str
-    object: str
-    knowledge_level: Optional[str]
-    agent_type: Optional[str]
-    primary_knowledge_source: Optional[str]
-    aggregator_knowledge_source: Optional[str]
-    # publications: Optional[str]
-    # subject_aspect_qualifier: Optional[str]
-    # subject_direction_qualifier: Optional[str]
-    # object_aspect_qualifier: Optional[str]
-    # object_direction_qualifier: Optional[str]
-    # upstream_data_source: Optional[str]
+    subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
+    predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
+    object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
+    knowledge_level: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
+    agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
+    primary_knowledge_source: str
+    aggregator_knowledge_source: str
+    # subject: str
+    # predicate: str
+    # object: str
+    # knowledge_level: str
+    # agent_type: str
+    publications: Optional[str]
+    subject_aspect_qualifier: Optional[str]
+    subject_direction_qualifier: Optional[str]
+    object_aspect_qualifier: Optional[str]
+    object_direction_qualifier: Optional[str]
+    upstream_data_source: Optional[str]
 
 
 class NodeSchema(pt.Model):
     """NodeSchema derived from Patito."""
 
-    # id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(util.get_biolink_model_prefix_keys())])
-    # category: str = pt.Field(
-    #     constraints=[
-    #         pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
-    #         pt.field.str.contains(DELIMITED_BY_PIPES),
-    #         pt.field.str.contains(NO_LEADING_WHITESPACE),
-    #         pt.field.str.contains(NO_TRAILING_WHITESPACE),
-    #     ]
-    # )
-    id: str
-    category: str
+    id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
+    category: str = pt.Field(
+        constraints=[
+            pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
+            pt.field.str.contains(DELIMITED_BY_PIPES),
+            pt.field.str.contains(NO_LEADING_WHITESPACE),
+            pt.field.str.contains(NO_TRAILING_WHITESPACE),
+        ]
+    )
+    # id: str
+    # category: str
     name: Optional[str]
     description: Optional[str]
     equivalent_identifiers: Optional[str]
-    # all_categories: Optional[str]
-    # publications: Optional[str]
-    # labels: Optional[str]
-    # international_resource_identifier: Optional[str]
+    all_categories: Optional[str]
+    publications: Optional[str]
+    labels: Optional[str]
+    international_resource_identifier: Optional[str]
 
 
 class ValidatorPolarsImpl(Validator):
@@ -108,47 +108,6 @@ class ValidatorPolarsImpl(Validator):
         logging.info(f"Validation report written to {self.get_report_file()}")
 
 
-def validate_nodes_and_edges(nodes, edges, limit):
-    """Validate a knowledge graph nodes vs edges."""
-    logger.info("Validating nodes & edges")
-
-    edges_df = (
-        pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
-        .select([pl.col("subject"), pl.col("object")])
-        .collect()
-    )
-    edge_ids = (
-        pl.concat(
-            items=[edges_df.select(pl.col("subject").alias("id")), edges_df.select(pl.col("object").alias("id"))],
-            how="vertical",
-            parallel=True,
-        )
-        .unique()
-        .get_column("id")
-        .to_list()
-    )
-
-    logger.info("collecting counts")
-
-    main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select([pl.col("id")])
-
-    if limit:
-        df = main_df.limit(limit).collect()
-    else:
-        df = main_df.collect()
-
-    counts_df = df.select([(~pl.col("id").str.contains_any(edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
-
-    logger.info(counts_df.head())
-
-    validation_reports = []
-
-    if counts_df.get_column("invalid_edge_ids_in_node_ids_count").item(0) > 0:
-        validation_reports.append(check_edge_ids_in_node_ids(df, edge_ids, nodes))
-
-    return validation_reports
-
-
 def validate_kg_nodes(nodes, limit):
     """Validate a knowledge graph using optional nodes TSV files."""
     logger.info("Validating nodes TSV...")
@@ -156,10 +115,10 @@ def validate_kg_nodes(nodes, limit):
     validation_reports = []
 
     # do an initial schema check
-    schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(0).collect()
+    schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
     try:
-        NodeSchema.validate(schema_df, allow_superfluous_columns=True)
+        NodeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         logger.info(f"number of schema violations: {len(ex.errors())}")
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
@@ -220,10 +179,10 @@ def validate_kg_edges(edges, limit):
     validation_reports = []
 
     # do an initial schema check
-    schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(0).collect()
+    schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
     try:
-        EdgeSchema.validate(schema_df, allow_superfluous_columns=True)
+        EdgeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
 
@@ -282,5 +241,46 @@ def validate_kg_edges(edges, limit):
 
         if counts_df.get_column("invalid_contains_biolink_model_agent_type_count").item(0) > 0:
             validation_reports.append(check_column_contains_biolink_model_agent_type(df, "agent_type", BIOLINK_AGENT_TYPE_KEYS))
+
+    return validation_reports
+
+
+def validate_nodes_and_edges(nodes, edges, limit):
+    """Validate a knowledge graph nodes vs edges."""
+    logger.info("Validating nodes & edges")
+
+    edges_df = (
+        pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
+        .select([pl.col("subject"), pl.col("object")])
+        .collect()
+    )
+    edge_ids = (
+        pl.concat(
+            items=[edges_df.select(pl.col("subject").alias("id")), edges_df.select(pl.col("object").alias("id"))],
+            how="vertical",
+            parallel=True,
+        )
+        .unique()
+        .get_column("id")
+        .to_list()
+    )
+
+    logger.info("collecting counts")
+
+    main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True).select([pl.col("id")])
+
+    if limit:
+        df = main_df.limit(limit).collect()
+    else:
+        df = main_df.collect()
+
+    counts_df = df.select([(~pl.col("id").str.contains_any(edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
+
+    logger.info(counts_df.head())
+
+    validation_reports = []
+
+    if counts_df.get_column("invalid_edge_ids_in_node_ids_count").item(0) > 0:
+        validation_reports.append(check_edge_ids_in_node_ids(df, edge_ids, nodes))
 
     return validation_reports
