@@ -34,7 +34,6 @@ def format_schema_error(error: dict) -> str:
 def write_report(output_format, report_file, validation_reports):
     """Write the validation report to a file."""
     if report_file:
-
         with open(report_file, "w") as report:
             if output_format == "txt":
                 report.write("\n".join(validation_reports))
@@ -49,7 +48,7 @@ class ValidatorPanderaImpl(Validator):
         """Create a new instance of the pandera-based validator."""
         super().__init__()
 
-    def validate(self, nodes_file_path, edges_file_path):
+    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
 
@@ -69,7 +68,6 @@ class ValidatorPanderaImpl(Validator):
 
         if edges_file_path:
             try:
-
                 logging.warning(f"🔍 Validating edges TSV: {edges_file_path}")
                 df_edges = pl.read_csv(edges_file_path, separator="\t", infer_schema_length=0)
                 try:

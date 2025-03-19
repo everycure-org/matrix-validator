@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 
 from tqdm import tqdm
 
+from matrix_validator import util
 from matrix_validator.validator import Validator
 
 # Increase max field size
@@ -76,271 +77,9 @@ ALL_POSSIBLE_RULES = [
     # etc., for any other rule names you have
 ]
 
-# Set of biolink prefixes (obtained Jan 29 2025 for Biolink model 4.2.6-rc2 via https://w3id.org/biolink/biolink-model-prefix-map.json)
-PREFIXES = {
-    "AGRKB",
-    "APO",
-    "AspGD",
-    "BFO",
-    "BIGG.METABOLITE",
-    "BIGG.REACTION",
-    "BIOGRID",
-    "BIOSAMPLE",
-    "BSPO",
-    "BTO",
-    "CAID",
-    "CARO",
-    "CAS",
-    "CATH",
-    "CATH.SUPERFAMILY",
-    "CDD",
-    "CHADO",
-    "CHEBI",
-    "CHEMBL.COMPOUND",
-    "CHEMBL.MECHANISM",
-    "CHEMBL.TARGET",
-    "CID",
-    "CIO",
-    "CL",
-    "CLINVAR",
-    "CLO",
-    "COAR_RESOURCE",
-    "COG",
-    "CPT",
-    "CTD",
-    "CTD.CHEMICAL",
-    "CTD.DISEASE",
-    "CTD.GENE",
-    "ChemBank",
-    "ComplexPortal",
-    "DBSNP",
-    "DDANAT",
-    "DGIdb",
-    "DOID",
-    "DOID-PROPERTY",
-    "DRUGBANK",
-    "DrugCentral",
-    "EC",
-    "ECO",
-    "ECTO",
-    "EDAM-DATA",
-    "EDAM-FORMAT",
-    "EDAM-OPERATION",
-    "EDAM-TOPIC",
-    "EFO",
-    "EGGNOG",
-    "EMAPA",
-    "ENSEMBL",
-    "ENVO",
-    "ExO",
-    "FAO",
-    "FB",
-    "FBbt",
-    "FBcv",
-    "FBdv",
-    "FMA",
-    "FOODON",
-    "FYECO",
-    "FYPO",
-    "GENEPIO",
-    "GENO",
-    "GO",
-    "GOLD.META",
-    "GOP",
-    "GOREL",
-    "GSID",
-    "GTEx",
-    "GTOPDB",
-    "HAMAP",
-    "HANCESTRO",
-    "HCPCS",
-    "HGNC",
-    "HGNC.FAMILY",
-    "HMDB",
-    "HP",
-    "HsapDv",
-    "IAO",
-    "ICD10",
-    "ICD9",
-    "IDO",
-    "INCHI",
-    "INCHIKEY",
-    "INO",
-    "INTACT",
-    "IUPHAR.FAMILY",
-    "KEGG",
-    "KEGG.BRIGHT",
-    "KEGG.COMPOUND",
-    "KEGG.DISEASE",
-    "KEGG.DRUG",
-    "KEGG.ENVIRON",
-    "KEGG.GENES",
-    "KEGG.GLYCAN",
-    "KEGG.MODULE",
-    "KEGG.ORTHOLOGY",
-    "KEGG.PATHWAY",
-    "KEGG.RCLASS",
-    "KEGG.REACTION",
-    "LOINC",
-    "MA",
-    "MAXO",
-    "MEDDRA",
-    "MESH",
-    "METANETX.REACTION",
-    "MGI",
-    "MI",
-    "MIR",
-    "MONDO",
-    "MP",
-    "MPATH",
-    "MSigDB",
-    "MmusDv",
-    "NBO",
-    "NBO-PROPERTY",
-    "NCBIGene",
-    "NCBITaxon",
-    "NCIT",
-    "NCIT-OBO",
-    "NDC",
-    "NDDF",
-    "NLMID",
-    "OBAN",
-    "OBI",
-    "OGMS",
-    "OMIM",
-    "OMIM.PS",
-    "OMIT",
-    "ORCID",
-    "PANTHER.FAMILY",
-    "PANTHER.PATHWAY",
-    "PATO",
-    "PCO",
-    "PFAM",
-    "PHARMGKB.DISEASE",
-    "PHARMGKB.DRUG",
-    "PHARMGKB.GENE",
-    "PHARMGKB.PATHWAYS",
-    "PHARMGKB.VARIANT",
-    "PHAROS",
-    "PIRSF",
-    "PMC",
-    "PMCID",
-    "PMID",
-    "PO",
-    "PR",
-    "PRINTS",
-    "PRODOM",
-    "PROSITE",
-    "PUBCHEM.COMPOUND",
-    "PUBCHEM.SUBSTANCE",
-    "PW",
-    "PathWhiz",
-    "PomBase",
-    "REACT",
-    "REPODB",
-    "RFAM",
-    "RGD",
-    "RHEA",
-    "RNACENTRAL",
-    "RO",
-    "RXCUI",
-    "RXNORM",
-    "ResearchID",
-    "SEED.REACTION",
-    "SEMMEDDB",
-    "SEPIO",
-    "SGD",
-    "SIDER.DRUG",
-    "SIO",
-    "SMART",
-    "SMPDB",
-    "SNOMED",
-    "SNOMEDCT",
-    "SO",
-    "SPDI",
-    "STATO",
-    "STY",
-    "SUPFAM",
-    "ScopusID",
-    "TAXRANK",
-    "TCDB",
-    "TIGRFAM",
-    "TO",
-    "UBERGRAPH",
-    "UBERON",
-    "UBERON_CORE",
-    "UBERON_NONAMESPACE",
-    "UMLS",
-    "UMLSSG",
-    "UNII",
-    "UNIPROT.ISOFORM",
-    "UO-PROPERTY",
-    "UPHENO",
-    "UniProtKB",
-    "VANDF",
-    "VMC",
-    "WB",
-    "WBPhenotype",
-    "WBVocab",
-    "WBbt",
-    "WBls",
-    "WIKIDATA",
-    "WIKIDATA_PROPERTY",
-    "WIKIPATHWAYS",
-    "WormBase",
-    "XAO",
-    "XCO",
-    "XPO",
-    "Xenbase",
-    "ZFA",
-    "ZFIN",
-    "ZFS",
-    "ZP",
-    "apollo",
-    "biolink",
-    "bioschemas",
-    "dcat",
-    "dcid",
-    "dct",
-    "dctypes",
-    "dictyBase",
-    "doi",
-    "fabio",
-    "faldo",
-    "foaf",
-    "foodb.compound",
-    "foodb.food",
-    "gff3",
-    "gpi",
-    "gtpo",
-    "icd11",
-    "icd11.foundation",
-    "interpro",
-    "isbn",
-    "isni",
-    "issn",
-    "linkml",
-    "medgen",
-    "metacyc.reaction",
-    "mirbase",
-    "mmmp.biomaps",
-    "ncats.bioplanet",
-    "ncats.drug",
-    "oboInOwl",
-    "orphanet",
-    "os",
-    "owl",
-    "pav",
-    "prov",
-    "qud",
-    "rdf",
-    "rdfs",
-    "regulates",
-    "schema",
-    "skos",
-    "wgs",
-    "xsd",
-}
+BIOLINK_PREFIX_KEYS = util.get_biolink_model_prefix_keys()
+BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_prefix_keys()
+BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_prefix_keys()
 
 # We store up to this many example lines for each violation
 MAX_EXAMPLES_PER_VIOLATION = 5
@@ -489,7 +228,7 @@ def check_curie_prefix(curie, found_unknown_prefixes):
         return
 
     prefix = curie.split(":", 1)[0].strip()
-    if prefix not in PREFIXES:
+    if prefix not in BIOLINK_PREFIX_KEYS:
         found_unknown_prefixes[prefix] += 1
 
 
@@ -530,7 +269,7 @@ def load_node_ids(nodes_file, violations, found_unknown_prefixes):
             # Check structural row length
             structural_issue = check_row_structural(row, num_header_cols)
             if structural_issue:
-                record_violation(violations, "Inconsistent columns", f"Line {line_idx+1} (1-based) {structural_issue}")
+                record_violation(violations, "Inconsistent columns", f"Line {line_idx + 1} (1-based) {structural_issue}")
                 continue
 
             # Check cell-level
@@ -540,7 +279,7 @@ def load_node_ids(nodes_file, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         issue,  # "Leading or trailing whitespace" or "Embedded TAB character"
-                        f"Nodes file line {line_idx+1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
+                        f"Nodes file line {line_idx + 1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
                     )
 
             # Collect node ID if present
@@ -592,7 +331,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
             # Check structural row length
             structural_issue = check_row_structural(row, num_header_cols)
             if structural_issue:
-                record_violation(violations, "Inconsistent columns", f"Line {line_idx+1} {structural_issue}")
+                record_violation(violations, "Inconsistent columns", f"Line {line_idx + 1} {structural_issue}")
                 continue
 
             # Cell-level checks
@@ -602,7 +341,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         issue,
-                        f"Edges file line {line_idx+1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
+                        f"Edges file line {line_idx + 1}, column {header[col_i]!r} has issue: {issue}. Value: {cell}",
                     )
 
             # Check subject/object membership + prefix
@@ -612,7 +351,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         "Edge subject not found in node IDs",
-                        f"Line {line_idx+1} subject '{subj}' not present in nodes file",
+                        f"Line {line_idx + 1} subject '{subj}' not present in nodes file",
                     )
                 check_curie_prefix(subj, found_unknown_prefixes)
 
@@ -622,7 +361,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                     record_violation(
                         violations,
                         "Edge object not found in node IDs",
-                        f"Line {line_idx+1} object '{obj}' not present in nodes file",
+                        f"Line {line_idx + 1} object '{obj}' not present in nodes file",
                     )
                 check_curie_prefix(obj, found_unknown_prefixes)
 
@@ -678,7 +417,7 @@ class ValidatorPurePythonImpl(Validator):
         """Create a new instance of the pure python-based validator."""
         super().__init__()
 
-    def validate(self, nodes_file_path, edges_file_file_path):
+    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         # Track all rule-based violations in this dictionary:
         #   { rule_name: { "count": int, "examples": [ ... ] }, ... }
@@ -691,7 +430,7 @@ class ValidatorPurePythonImpl(Validator):
         node_ids = load_node_ids(nodes_file_path, violations, found_unknown_prefixes)
 
         # 2) Check edges
-        check_edges_file(edges_file_file_path, node_ids, violations, found_unknown_prefixes)
+        check_edges_file(edges_file_path, node_ids, violations, found_unknown_prefixes)
 
         # 3) Final report
         report_violations(violations, found_unknown_prefixes)
