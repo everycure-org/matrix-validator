@@ -26,6 +26,7 @@ def common_options(f):
         help="Format of the validation report.",
     )
     def wrapper(*args, **kwargs):
+        """Wrap common options in function."""
         return f(*args, **kwargs)
 
     return wrapper
@@ -57,6 +58,30 @@ def help(ctx, subcommand):
         click.echo("The command you seek help with does not exist.")
     else:
         click.echo(subcommand_obj.get_help(ctx))
+
+
+@main.command()
+@common_options
+@click.option(
+    "--validator",
+    type=click.Choice(["pandas", "python", "polars"], case_sensitive=False),
+    default="polars",
+    help="Pick validator implementation.",
+)
+def validate(nodes, edges, limit, report_dir, output_format, validator):
+    """
+    CLI for matrix-validator.
+
+    This validates a knowledge graph using optional nodes and edges TSV files.
+    """
+    if validator == "python":
+        pandera(nodes, edges, limit, report_dir, output_format)
+    elif validator == "pandera":
+        python(nodes, edges, limit, report_dir, output_format)
+    elif validator == "polars":
+        polars(nodes, edges, limit, report_dir, output_format)
+    else:
+        click.echo(f"Validation failed: unknown validator {validate}", err=True)
 
 
 @main.command()
