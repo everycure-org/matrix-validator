@@ -32,73 +32,76 @@ from matrix_validator.validator import Validator
 
 logger = logging.getLogger(__name__)
 
-BIOLINK_PREFIX_KEYS = util.get_biolink_model_prefix_keys()
 BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
 BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_agent_type_keys()
 
 
-class EdgeSchema(pt.Model):
-    """EdgeSchema derived from Patito."""
+def create_edge_schema(prefixes: list[str]):
+    """Create a EdgeSchema with a dynamic list of allowed prefixes."""
 
-    subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
-    predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
-    object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
-    knowledge_level: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
-    agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
-    primary_knowledge_source: str
-    aggregator_knowledge_source: str
-    # subject: str
-    # predicate: str
-    # object: str
-    # knowledge_level: str
-    # agent_type: str
-    publications: Optional[str]
-    subject_aspect_qualifier: Optional[str]
-    subject_direction_qualifier: Optional[str]
-    object_aspect_qualifier: Optional[str]
-    object_direction_qualifier: Optional[str]
-    upstream_data_source: Optional[str]
+    class EdgeSchema(pt.Model):
+        """EdgeSchema derived from Patito."""
+
+        subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
+        object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        knowledge_level: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
+        agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
+        primary_knowledge_source: str
+        aggregator_knowledge_source: str
+        publications: Optional[str]
+        subject_aspect_qualifier: Optional[str]
+        subject_direction_qualifier: Optional[str]
+        object_aspect_qualifier: Optional[str]
+        object_direction_qualifier: Optional[str]
+        upstream_data_source: Optional[str]
+
+    return EdgeSchema
 
 
-class NodeSchema(pt.Model):
-    """NodeSchema derived from Patito."""
+def create_node_schema(prefixes: list[str]):
+    """Create a NodeSchema with a dynamic list of allowed prefixes."""
 
-    id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(BIOLINK_PREFIX_KEYS)])
-    category: str = pt.Field(
-        constraints=[
-            pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
-            pt.field.str.contains(DELIMITED_BY_PIPES),
-            pt.field.str.contains(NO_LEADING_WHITESPACE),
-            pt.field.str.contains(NO_TRAILING_WHITESPACE),
-        ]
-    )
-    # id: str
-    # category: str
-    name: Optional[str]
-    description: Optional[str]
-    equivalent_identifiers: Optional[str]
-    all_categories: Optional[str]
-    publications: Optional[str]
-    labels: Optional[str]
-    international_resource_identifier: Optional[str]
+    class NodeSchema(pt.Model):
+        """NodeSchema derived from Patito."""
+
+        id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        category: str = pt.Field(
+            constraints=[
+                pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
+                pt.field.str.contains(DELIMITED_BY_PIPES),
+                pt.field.str.contains(NO_LEADING_WHITESPACE),
+                pt.field.str.contains(NO_TRAILING_WHITESPACE),
+            ]
+        )
+        name: Optional[str]
+        description: Optional[str]
+        equivalent_identifiers: Optional[str]
+        all_categories: Optional[str]
+        publications: Optional[str]
+        labels: Optional[str]
+        international_resource_identifier: Optional[str]
+
+    return NodeSchema
 
 
 class ValidatorPolarsImpl(Validator):
     """Polars-based validator implementation."""
 
-    def __init__(self):
+    def __init__(self, config):
         """Create a new instance of the polars-based validator."""
-        super().__init__()
+        super().__init__(config)
 
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
 
         if nodes_file_path:
-            validation_reports.extend(validate_kg_nodes(nodes_file_path, limit))
+            tmp_val_violations = validate_kg_nodes(nodes_file_path, limit, self.prefixes)
+            validation_reports.extend(tmp_val_violations)
 
         if edges_file_path:
-            validation_reports.extend(validate_kg_edges(edges_file_path, limit))
+            validation_reports.extend(validate_kg_edges(edges_file_path, limit, self.prefixes))
 
         if nodes_file_path and edges_file_path and not validation_reports:
             validation_reports.extend(validate_nodes_and_edges(nodes_file_path, edges_file_path, limit))
@@ -108,7 +111,7 @@ class ValidatorPolarsImpl(Validator):
         logging.info(f"Validation report written to {self.get_report_file()}")
 
 
-def validate_kg_nodes(nodes, limit):
+def validate_kg_nodes(nodes, limit, prefixes):
     """Validate a knowledge graph using optional nodes TSV files."""
     logger.info("Validating nodes TSV...")
 
@@ -118,7 +121,8 @@ def validate_kg_nodes(nodes, limit):
     schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
     try:
-        NodeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
+        node_schema = create_node_schema(prefixes)
+        node_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         logger.warning(f"number of schema violations: {len(ex.errors())}")
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
@@ -141,7 +145,7 @@ def validate_kg_nodes(nodes, limit):
             counts_df = df.select(
                 [
                     (~pl.col("id").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_id_count"),
-                    (~pl.col("id").str.contains_any(BIOLINK_PREFIX_KEYS)).sum().alias("invalid_contains_biolink_model_prefix_id_count"),
+                    (~pl.col("id").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_id_count"),
                     (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_category_count"),
                     (~pl.col("category").str.contains(DELIMITED_BY_PIPES)).sum().alias("invalid_delimited_by_pipes_category_count"),
                     (~pl.col("category").str.contains(NO_LEADING_WHITESPACE)).sum().alias("invalid_no_leading_whitespace_category_count"),
@@ -155,7 +159,7 @@ def validate_kg_nodes(nodes, limit):
                 validation_reports.append(check_column_is_valid_curie(df, "id"))
 
             if counts_df.get_column("invalid_contains_biolink_model_prefix_id_count").item(0) > 0:
-                validation_reports.append(check_column_contains_biolink_model_prefix(df, "id", BIOLINK_PREFIX_KEYS))
+                validation_reports.append(check_column_contains_biolink_model_prefix(df, "id", prefixes))
 
             if counts_df.get_column("invalid_no_leading_whitespace_category_count").item(0) > 0:
                 validation_reports.append(check_column_no_leading_whitespace(df, "category"))
@@ -179,7 +183,7 @@ def validate_kg_nodes(nodes, limit):
     return validation_reports
 
 
-def validate_kg_edges(edges, limit):
+def validate_kg_edges(edges, limit, prefixes):
     """Validate a knowledge graph using optional edges TSV files."""
     logger.info("Validating edges TSV...")
 
@@ -189,7 +193,8 @@ def validate_kg_edges(edges, limit):
     schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
     try:
-        EdgeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
+        edge_schema = create_edge_schema(prefixes)
+        edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
 
@@ -210,16 +215,12 @@ def validate_kg_edges(edges, limit):
             counts_df = df.select(
                 [
                     (~pl.col("subject").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_subject_count"),
-                    (~pl.col("subject").str.contains_any(BIOLINK_PREFIX_KEYS))
-                    .sum()
-                    .alias("invalid_contains_biolink_model_prefix_subject_count"),
+                    (~pl.col("subject").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_subject_count"),
                     (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX))
                     .sum()
                     .alias("invalid_starts_with_biolink_predicate_count"),
                     (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
-                    (~pl.col("object").str.contains_any(BIOLINK_PREFIX_KEYS))
-                    .sum()
-                    .alias("invalid_contains_biolink_model_prefix_object_count"),
+                    (~pl.col("object").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_object_count"),
                     (~pl.col("knowledge_level").str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS))
                     .sum()
                     .alias("invalid_contains_biolink_model_knowledge_level_count"),
@@ -235,13 +236,13 @@ def validate_kg_edges(edges, limit):
                 validation_reports.append(check_column_is_valid_curie(df, "subject"))
 
             if counts_df.get_column("invalid_contains_biolink_model_prefix_subject_count").item(0) > 0:
-                validation_reports.append(check_column_contains_biolink_model_prefix(df, "subject", BIOLINK_PREFIX_KEYS))
+                validation_reports.append(check_column_contains_biolink_model_prefix(df, "subject", prefixes))
 
             if counts_df.get_column("invalid_curie_object_count").item(0) > 0:
                 validation_reports.append(check_column_is_valid_curie(df, "object"))
 
             if counts_df.get_column("invalid_contains_biolink_model_prefix_object_count").item(0) > 0:
-                validation_reports.append(check_column_contains_biolink_model_prefix(df, "object", BIOLINK_PREFIX_KEYS))
+                validation_reports.append(check_column_contains_biolink_model_prefix(df, "object", prefixes))
 
             if counts_df.get_column("invalid_starts_with_biolink_predicate_count").item(0) > 0:
                 validation_reports.append(check_column_starts_with_biolink(df, "predicate"))

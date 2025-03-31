@@ -1,16 +1,29 @@
 """Validator abstract class."""
 
+import json
 import os
 from abc import ABC, abstractmethod
+from importlib import resources as il_resources
+
+import yaml
+from biolink_model import prefixmaps
 
 
 class Validator(ABC):
     """Abstract class for a validator."""
 
-    def __init__(self):
+    def __init__(self, config):
         """Create a new instance of the validator."""
         self.report_dir = None
         self.output_format = "txt"
+        self.config = config
+        tmp_prefixes = list(json.loads(il_resources.read_text(prefixmaps, "biolink-model-prefix-map.json")).keys())
+        with open(config, "r") as config_file:
+            config_contents = yaml.safe_load(config_file)
+            supplemental_prefixes = list(config_contents["supplemental_prefixes"])
+            if supplemental_prefixes:
+                tmp_prefixes.extend(supplemental_prefixes)
+        self.prefixes = list(set(tmp_prefixes))
 
     @abstractmethod
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):

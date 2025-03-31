@@ -15,10 +15,11 @@ def common_options(f):
     """Provide common click options used in various subcommands."""
 
     @wraps(f)
-    @click.option("--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
-    @click.option("--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
-    @click.option("--limit", type=click.INT, required=False, help="Rows to validate.  When not set, all rows are validated.")
-    @click.option("--report-dir", type=click.Path(writable=True), required=False, help="Path to write report.")
+    @click.option("-c", "--config", type=click.Path(), required=False, help="Path to the config file.")
+    @click.option("-n", "--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
+    @click.option("-e", "--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
+    @click.option("-l", "--limit", type=click.INT, required=False, help="Rows to validate.  When not set, all rows are validated.")
+    @click.option("-r", "--report-dir", type=click.Path(writable=True), required=False, help="Path to write report.")
     @click.option(
         "--output-format",
         type=click.Choice(["txt", "md"], case_sensitive=False),
@@ -61,14 +62,14 @@ def help(ctx, subcommand):
 
 @main.command()
 @common_options
-def polars(nodes, edges, limit, report_dir, output_format):
+def polars(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_polars.ValidatorPolarsImpl()
+        validator = validator_polars.ValidatorPolarsImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:
@@ -81,14 +82,14 @@ def polars(nodes, edges, limit, report_dir, output_format):
 
 @main.command()
 @common_options
-def python(nodes, edges, limit, report_dir, output_format):
+def python(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_purepython.ValidatorPurePythonImpl()
+        validator = validator_purepython.ValidatorPurePythonImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:
