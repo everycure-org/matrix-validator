@@ -102,14 +102,14 @@ def python(config, nodes, edges, limit, report_dir, output_format):
 
 @main.command()
 @common_options
-def pandera(nodes, edges, limit, report_dir, output_format):
+def pandera(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_schema.ValidatorPanderaImpl()
+        validator = validator_schema.ValidatorPanderaImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:

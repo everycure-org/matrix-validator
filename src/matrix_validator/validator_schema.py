@@ -44,9 +44,9 @@ def write_report(output_format, report_file, validation_reports):
 class ValidatorPanderaImpl(Validator):
     """Pandera-based validator implementation."""
 
-    def __init__(self):
+    def __init__(self, config):
         """Create a new instance of the pandera-based validator."""
-        super().__init__()
+        super().__init__(config)
 
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
