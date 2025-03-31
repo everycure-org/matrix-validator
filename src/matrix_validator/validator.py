@@ -17,7 +17,7 @@ class Validator(ABC):
         self.report_dir = None
         self.output_format = "txt"
         self.config = config
-        tmp_prefixes = list(json.loads(il_resources.read_text(prefixmaps, "biolink-model-prefix-map.json")).keys())
+        tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
         with open(config, "r") as config_file:
             config_contents = yaml.safe_load(config_file)
             supplemental_prefixes = list(config_contents["supplemental_prefixes"])
