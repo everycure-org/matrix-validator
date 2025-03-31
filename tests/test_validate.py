@@ -10,5 +10,6 @@ class TestValidate(unittest.TestCase):
 
     def test_version_type(self):
         """Test validation method."""
-        validator = ValidatorPanderaImpl()
+
+        validator = ValidatorPanderaImpl(config="./config.yaml")
         validator.validate(nodes_file_path=None, edges_file_path=None)
