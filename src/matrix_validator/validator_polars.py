@@ -116,6 +116,12 @@ def validate_kg_nodes(nodes, limit):
 
     # do an initial schema check
     schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+    superfluous_columns = []
+
+    try:
+        NodeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
+    except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
 
     try:
         NodeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
@@ -176,6 +182,12 @@ def validate_kg_nodes(nodes, limit):
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
 
+        logger.warning(
+            "The following columns are not recognised by the biolink model. "
+            + "This is not an error but consider suggesting these to be added to "
+            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+        )
+
     return validation_reports
 
 
@@ -187,6 +199,13 @@ def validate_kg_edges(edges, limit):
 
     # do an initial schema check
     schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+
+    superfluous_columns = []
+
+    try:
+        EdgeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
+    except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
 
     try:
         EdgeSchema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
@@ -258,6 +277,12 @@ def validate_kg_edges(edges, limit):
             logger.error(f"missing required column: {repr(ex)}")
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
+
+        logger.warning(
+            "The following columns are not recognised by the biolink model. "
+            + "This is not an error but consider suggesting these to be added to "
+            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+        )
 
     return validation_reports
 
