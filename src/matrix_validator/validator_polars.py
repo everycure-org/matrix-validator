@@ -47,11 +47,8 @@ class EdgeSchema(pt.Model):
     agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
     primary_knowledge_source: str
     aggregator_knowledge_source: str
-    # subject: str
-    # predicate: str
-    # object: str
-    # knowledge_level: str
-    # agent_type: str
+    original_subject: str
+    original_object: str
     publications: Optional[str]
     subject_aspect_qualifier: Optional[str]
     subject_direction_qualifier: Optional[str]
@@ -72,8 +69,6 @@ class NodeSchema(pt.Model):
             pt.field.str.contains(NO_TRAILING_WHITESPACE),
         ]
     )
-    # id: str
-    # category: str
     name: Optional[str]
     description: Optional[str]
     equivalent_identifiers: Optional[str]
