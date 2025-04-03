@@ -2,7 +2,6 @@
 
 import logging as _logging
 import sys
-from functools import wraps
 
 import click
 
