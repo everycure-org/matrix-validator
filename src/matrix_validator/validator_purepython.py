@@ -77,9 +77,8 @@ ALL_POSSIBLE_RULES = [
     # etc., for any other rule names you have
 ]
 
-BIOLINK_PREFIX_KEYS = util.get_biolink_model_prefix_keys()
-BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_prefix_keys()
-BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_prefix_keys()
+BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
+BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_agent_type_keys()
 
 # We store up to this many example lines for each violation
 MAX_EXAMPLES_PER_VIOLATION = 5
@@ -216,7 +215,7 @@ def check_cell_value(cell):
     return issues
 
 
-def check_curie_prefix(curie, found_unknown_prefixes):
+def check_curie_prefix(curie, prefixes, found_unknown_prefixes):
     """
     Check if the CURIE's prefix is in the known BioLink prefixes.
 
@@ -228,11 +227,11 @@ def check_curie_prefix(curie, found_unknown_prefixes):
         return
 
     prefix = curie.split(":", 1)[0].strip()
-    if prefix not in BIOLINK_PREFIX_KEYS:
+    if prefix not in prefixes:
         found_unknown_prefixes[prefix] += 1
 
 
-def load_node_ids(nodes_file, violations, found_unknown_prefixes):
+def load_node_ids(nodes_file, violations, prefixes, found_unknown_prefixes):
     """Validate the nodes file, gather node IDs, track unknown prefixes in found_unknown_prefixes."""
     error = check_file_naming_convention(nodes_file)
     if error:
@@ -286,12 +285,12 @@ def load_node_ids(nodes_file, violations, found_unknown_prefixes):
             if id_index is not None and id_index < len(row):
                 node_id = row[id_index]
                 node_ids.add(node_id)
-                check_curie_prefix(node_id, found_unknown_prefixes)
+                check_curie_prefix(node_id, prefixes, found_unknown_prefixes)
 
     return node_ids
 
 
-def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
+def check_edges_file(edges_file, node_ids, violations, prefixes, found_unknown_prefixes):
     """Validate the edges file."""
     error = check_file_naming_convention(edges_file)
     if error:
@@ -353,7 +352,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                         "Edge subject not found in node IDs",
                         f"Line {line_idx + 1} subject '{subj}' not present in nodes file",
                     )
-                check_curie_prefix(subj, found_unknown_prefixes)
+                check_curie_prefix(subj, prefixes, found_unknown_prefixes)
 
             if obj_idx is not None and obj_idx < len(row):
                 obj = row[obj_idx]
@@ -363,7 +362,7 @@ def check_edges_file(edges_file, node_ids, violations, found_unknown_prefixes):
                         "Edge object not found in node IDs",
                         f"Line {line_idx + 1} object '{obj}' not present in nodes file",
                     )
-                check_curie_prefix(obj, found_unknown_prefixes)
+                check_curie_prefix(obj, prefixes, found_unknown_prefixes)
 
 
 def report_violations(violations, found_unknown_prefixes):
@@ -413,9 +412,9 @@ def report_violations(violations, found_unknown_prefixes):
 class ValidatorPurePythonImpl(Validator):
     """Pure python-based validator implementation."""
 
-    def __init__(self):
-        """Create a new instance of the pure python-based validator."""
-        super().__init__()
+    def __init__(self, config):
+        """Create a new instance of the python-based validator."""
+        super().__init__(config)
 
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
@@ -427,10 +426,10 @@ class ValidatorPurePythonImpl(Validator):
         found_unknown_prefixes = Counter()
 
         # 1) Load nodes
-        node_ids = load_node_ids(nodes_file_path, violations, found_unknown_prefixes)
+        node_ids = load_node_ids(nodes_file_path, violations, self.prefixes, found_unknown_prefixes)
 
         # 2) Check edges
-        check_edges_file(edges_file_path, node_ids, violations, found_unknown_prefixes)
+        check_edges_file(edges_file_path, node_ids, violations, self.prefixes, found_unknown_prefixes)
 
         # 3) Final report
         report_violations(violations, found_unknown_prefixes)

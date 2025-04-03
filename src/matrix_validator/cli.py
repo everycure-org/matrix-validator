@@ -2,7 +2,6 @@
 
 import logging as _logging
 import sys
-from functools import wraps
 
 import click
 
@@ -11,32 +10,28 @@ from matrix_validator import __version__, validator_polars, validator_purepython
 logger = _logging.getLogger(__name__)
 
 
-def common_options(f):
-    """Provide common click options used in various subcommands."""
-
-    @wraps(f)
-    @click.option("--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
-    @click.option("--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
-    @click.option("--limit", type=click.INT, required=False, help="Rows to validate.  When not set, all rows are validated.")
-    @click.option("--report-dir", type=click.Path(writable=True), required=False, help="Path to write report.")
-    @click.option(
-        "--output-format",
-        type=click.Choice(["txt", "md"], case_sensitive=False),
-        default="txt",
-        help="Format of the validation report.",
-    )
-    def wrapper(*args, **kwargs):
-        """Wrap common options in function."""
-        return f(*args, **kwargs)
-
-    return wrapper
-
-
-@click.group()
+@click.command()
+@click.option(
+    "--validator",
+    type=click.Choice(["pandas", "python", "polars"], case_sensitive=False),
+    default="polars",
+    help="Pick validator implementation.",
+)
+@click.option("-c", "--config", type=click.Path(), required=False, help="Path to the config file.")
+@click.option("-n", "--nodes", type=click.Path(), required=False, help="Path to the nodes TSV file.")
+@click.option("-e", "--edges", type=click.Path(), required=False, help="Path to the edges TSV file.")
+@click.option("-l", "--limit", type=click.INT, required=False, help="Rows to validate.  When not set, all rows are validated.")
+@click.option("-r", "--report-dir", type=click.Path(writable=True), required=False, help="Path to write report.")
+@click.option(
+    "--output-format",
+    type=click.Choice(["txt", "md"], case_sensitive=False),
+    default="txt",
+    help="Format of the validation report.",
+)
 @click.option("-v", "--verbose", count=True)
 @click.option("-q", "--quiet")
 @click.version_option(__version__)
-def main(verbose: int, quiet: bool):
+def main(validator, config, nodes, edges, limit, report_dir, output_format, verbose: int, quiet: bool):
     """Run the Matrix Validator CLI."""
     if verbose >= 2:
         _logging.basicConfig(stream=sys.stdout, level=_logging.DEBUG)
@@ -47,53 +42,23 @@ def main(verbose: int, quiet: bool):
     if quiet:
         _logging.basicConfig(stream=sys.stdout, level=_logging.ERROR)
 
-
-@main.command()
-@click.argument("subcommand")
-@click.pass_context
-def help(ctx, subcommand):
-    """Echoes help for subcommands."""
-    subcommand_obj = main.get_command(ctx, subcommand)
-    if subcommand_obj is None:
-        click.echo("The command you seek help with does not exist.")
-    else:
-        click.echo(subcommand_obj.get_help(ctx))
+    match validator:
+        case "python":
+            python(config, nodes, edges, limit, report_dir, output_format)
+        case "pandera":
+            pandera(config, nodes, edges, limit, report_dir, output_format)
+        case "polars":
+            polars(config, nodes, edges, limit, report_dir, output_format)
 
 
-@main.command()
-@common_options
-@click.option(
-    "--validator",
-    type=click.Choice(["pandas", "python", "polars"], case_sensitive=False),
-    default="polars",
-    help="Pick validator implementation.",
-)
-def validate(nodes, edges, limit, report_dir, output_format, validator):
-    """
-    CLI for matrix-validator.
-
-    This validates a knowledge graph using optional nodes and edges TSV files.
-    """
-    if validator == "python":
-        pandera(nodes, edges, limit, report_dir, output_format)
-    elif validator == "pandera":
-        python(nodes, edges, limit, report_dir, output_format)
-    elif validator == "polars":
-        polars(nodes, edges, limit, report_dir, output_format)
-    else:
-        click.echo(f"Validation failed: unknown validator {validate}", err=True)
-
-
-@main.command()
-@common_options
-def polars(nodes, edges, limit, report_dir, output_format):
+def polars(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_polars.ValidatorPolarsImpl()
+        validator = validator_polars.ValidatorPolarsImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:
@@ -104,16 +69,14 @@ def polars(nodes, edges, limit, report_dir, output_format):
         click.echo("Validation failed. See logs for details.", err=True)
 
 
-@main.command()
-@common_options
-def python(nodes, edges, limit, report_dir, output_format):
+def python(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_purepython.ValidatorPurePythonImpl()
+        validator = validator_purepython.ValidatorPurePythonImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:
@@ -124,16 +87,14 @@ def python(nodes, edges, limit, report_dir, output_format):
         click.echo("Validation failed. See logs for details.", err=True)
 
 
-@main.command()
-@common_options
-def pandera(nodes, edges, limit, report_dir, output_format):
+def pandera(config, nodes, edges, limit, report_dir, output_format):
     """
     CLI for matrix-validator.
 
     This validates a knowledge graph using optional nodes and edges TSV files.
     """
     try:
-        validator = validator_schema.ValidatorPanderaImpl()
+        validator = validator_schema.ValidatorPanderaImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         if report_dir:

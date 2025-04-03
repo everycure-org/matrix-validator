@@ -46,6 +46,9 @@ style = "pep440"
 line-length = 140
 target-version = ["py38", "py39", "py310", "py311"]
 
+[tool.isort]
+line_length = 140
+
 [tool.ruff]
 lint.extend-ignore = [
     "D211",  # `no-blank-line-before-class`
