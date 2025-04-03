@@ -182,11 +182,12 @@ def validate_kg_nodes(nodes, limit):
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
 
-        logger.warning(
-            "The following columns are not recognised by the biolink model. "
-            + "This is not an error but consider suggesting these to be added to "
-            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
-        )
+        if superfluous_columns:
+            logger.warning(
+                "The following columns are not recognised by the biolink model. "
+                + "This is not an error but consider suggesting these to be added to "
+                + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+            )
 
     return validation_reports
 
@@ -278,11 +279,12 @@ def validate_kg_edges(edges, limit):
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
 
-        logger.warning(
-            "The following columns are not recognised by the biolink model. "
-            + "This is not an error but consider suggesting these to be added to "
-            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
-        )
+        if superfluous_columns:
+            logger.warning(
+                "The following columns are not recognised by the biolink model. "
+                + "This is not an error but consider suggesting these to be added to "
+                + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+            )
 
     return validation_reports
 
