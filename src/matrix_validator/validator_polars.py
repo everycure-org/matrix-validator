@@ -49,6 +49,8 @@ def create_edge_schema(prefixes: list[str]):
         agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
         primary_knowledge_source: str
         aggregator_knowledge_source: str
+        original_subject: str
+        original_object: str
         publications: Optional[str]
         subject_aspect_qualifier: Optional[str]
         subject_direction_qualifier: Optional[str]
@@ -119,9 +121,16 @@ def validate_kg_nodes(nodes, limit, prefixes):
 
     # do an initial schema check
     schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+    superfluous_columns = []
+
+    node_schema = create_node_schema(prefixes)
 
     try:
-        node_schema = create_node_schema(prefixes)
+        node_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
+    except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+
+    try:
         node_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         logger.warning(f"number of schema violations: {len(ex.errors())}")
@@ -180,6 +189,13 @@ def validate_kg_nodes(nodes, limit, prefixes):
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
 
+        if superfluous_columns:
+            logger.warning(
+                "The following columns are not recognised by the biolink model. "
+                + "This is not an error but consider suggesting these to be added to "
+                + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+            )
+
     return validation_reports
 
 
@@ -192,8 +208,16 @@ def validate_kg_edges(edges, limit, prefixes):
     # do an initial schema check
     schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
+    superfluous_columns = []
+
+    edge_schema = create_edge_schema(prefixes)
+
     try:
-        edge_schema = create_edge_schema(prefixes)
+        edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
+    except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+
+    try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
@@ -259,6 +283,13 @@ def validate_kg_edges(edges, limit, prefixes):
             logger.error(f"missing required column: {repr(ex)}")
             validation_reports.append(f"Missing required column: {repr(ex)}")
             return validation_reports
+
+        if superfluous_columns:
+            logger.warning(
+                "The following columns are not recognised by the biolink model. "
+                + "This is not an error but consider suggesting these to be added to "
+                + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
+            )
 
     return validation_reports
 
