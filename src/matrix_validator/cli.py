@@ -9,6 +9,7 @@ from matrix_validator import __version__, validator_polars, validator_purepython
 
 logger = _logging.getLogger(__name__)
 
+
 @click.command()
 @click.option(
     "--validator",
