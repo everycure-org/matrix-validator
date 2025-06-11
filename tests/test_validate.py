@@ -1,12 +1,12 @@
 """Test Validation."""
+
 import json
 import unittest
-
-from matrix_validator.validator_schema import ValidatorPanderaImpl
 from importlib import resources as il_resources
 
 from biolink_model import prefixmaps
-import polars as pl
+
+from matrix_validator.validator_schema import ValidatorPanderaImpl
 
 
 class TestValidate(unittest.TestCase):
@@ -18,6 +18,7 @@ class TestValidate(unittest.TestCase):
         validator.validate(nodes_file_path=None, edges_file_path=None)
 
     def test_biolink_prefix_class_mapping(self):
+        """Test extraction of biolink preferred prefix per category mapping."""
         preferred_prefixes_per_class = json.loads(il_resources.files(prefixmaps).joinpath("preferred_prefixes_per_class.json").read_text())
         class_prefix_map = {
             item["class_name"]: [prefix["prefix"] for prefix in item["prefix_map"]]
