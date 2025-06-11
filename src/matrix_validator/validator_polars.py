@@ -361,7 +361,7 @@ def validate_nodes_and_edges(nodes, edges, limit):
 
         # Get counts of valid and invalid edge types
         valid_edges = edge_type_analysis.filter(pl.col("valid"))
-        invalid_edges = edge_type_analysis.filter(not pl.col("valid"))
+        invalid_edges = edge_type_analysis.filter(~pl.col("valid"))
 
         # Count unique edge types and edge instances
         unique_valid_types = len(valid_edges)
@@ -393,7 +393,7 @@ def validate_nodes_and_edges(nodes, edges, limit):
 
         # Add more detailed report about invalid edge types if there are any
         if invalid_count > 0:
-            invalid_edge_types = edge_type_analysis.filter(not pl.col("valid")).sort("count", descending=True)
+            invalid_edge_types = edge_type_analysis.filter(~pl.col("valid")).sort("count", descending=True)
             logger.info(f"Found {unique_invalid_types} distinct invalid edge types")
 
             # Format invalid edge types for reporting (limit to top 20 for readability)
