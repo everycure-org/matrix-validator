@@ -1,10 +1,8 @@
 """Polars-based validator check."""
 
-import polars as pl
 
 def validate(class_prefix_map, df):
     """Validate node.id and category align with biolink preferred prefix mappings."""
-
     results = {}
 
     for row in df.rows(named=True):
@@ -15,10 +13,10 @@ def validate(class_prefix_map, df):
         else:
             cat = row_category
 
-        if not cat in class_prefix_map.keys():
+        if cat not in class_prefix_map.keys():
             continue
 
-        if not prefix in class_prefix_map[cat]:
+        if prefix not in class_prefix_map[cat]:
             if cat not in results:
                 results[cat] = set()
             results[cat].add(prefix)

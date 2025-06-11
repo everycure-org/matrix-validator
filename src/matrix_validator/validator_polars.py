@@ -28,7 +28,9 @@ from matrix_validator.checks.check_column_no_leading_whitespace import validate 
 from matrix_validator.checks.check_column_no_trailing_whitespace import validate as check_column_no_trailing_whitespace
 from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
-from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import validate as check_node_id_and_category_with_biolink_preferred_prefixes
+from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import (
+    validate as check_node_id_and_category_with_biolink_preferred_prefixes,
+)
 from matrix_validator.validator import Validator
 
 logger = logging.getLogger(__name__)
@@ -113,7 +115,6 @@ class ValidatorPolarsImpl(Validator):
         self.write_report(validation_reports)
         logging.info(f"Validation report written to {self.get_report_file()}")
 
-
     def validate_kg_nodes(self, nodes, limit):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
@@ -156,10 +157,16 @@ class ValidatorPolarsImpl(Validator):
                     [
                         (~pl.col("id").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_id_count"),
                         (~pl.col("id").str.contains_any(self.prefixes)).sum().alias("invalid_contains_biolink_model_prefix_id_count"),
-                        (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_category_count"),
+                        (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX))
+                        .sum()
+                        .alias("invalid_starts_with_biolink_category_count"),
                         (~pl.col("category").str.contains(DELIMITED_BY_PIPES)).sum().alias("invalid_delimited_by_pipes_category_count"),
-                        (~pl.col("category").str.contains(NO_LEADING_WHITESPACE)).sum().alias("invalid_no_leading_whitespace_category_count"),
-                        (~pl.col("category").str.contains(NO_TRAILING_WHITESPACE)).sum().alias("invalid_no_trailing_whitespace_category_count"),
+                        (~pl.col("category").str.contains(NO_LEADING_WHITESPACE))
+                        .sum()
+                        .alias("invalid_no_leading_whitespace_category_count"),
+                        (~pl.col("category").str.contains(NO_TRAILING_WHITESPACE))
+                        .sum()
+                        .alias("invalid_no_trailing_whitespace_category_count"),
                     ]
                 )
 
@@ -204,7 +211,6 @@ class ValidatorPolarsImpl(Validator):
 
         return validation_reports
 
-
     def validate_kg_edges(self, edges, limit):
         """Validate a knowledge graph using optional edges TSV files."""
         logger.info("Validating edges TSV...")
@@ -245,12 +251,16 @@ class ValidatorPolarsImpl(Validator):
                 counts_df = df.select(
                     [
                         (~pl.col("subject").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_subject_count"),
-                        (~pl.col("subject").str.contains_any(self.prefixes)).sum().alias("invalid_contains_biolink_model_prefix_subject_count"),
+                        (~pl.col("subject").str.contains_any(self.prefixes))
+                        .sum()
+                        .alias("invalid_contains_biolink_model_prefix_subject_count"),
                         (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX))
                         .sum()
                         .alias("invalid_starts_with_biolink_predicate_count"),
                         (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
-                        (~pl.col("object").str.contains_any(self.prefixes)).sum().alias("invalid_contains_biolink_model_prefix_object_count"),
+                        (~pl.col("object").str.contains_any(self.prefixes))
+                        .sum()
+                        .alias("invalid_contains_biolink_model_prefix_object_count"),
                         (~pl.col("knowledge_level").str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS))
                         .sum()
                         .alias("invalid_contains_biolink_model_knowledge_level_count"),
@@ -299,7 +309,6 @@ class ValidatorPolarsImpl(Validator):
 
         return validation_reports
 
-
     def validate_nodes_and_edges(self, nodes, edges):
         """Validate a knowledge graph nodes vs edges."""
         logger.info("Validating nodes & edges")
@@ -322,14 +331,22 @@ class ValidatorPolarsImpl(Validator):
 
         logger.info("collecting counts")
 
-        nodes_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True).select([pl.col("id")]).collect()
+        nodes_df = (
+            pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True).select([pl.col("id")]).collect()
+        )
 
         unique_node_ids = nodes_df.select(pl.col("id")).unique().get_column("id").to_list()
 
         # check nodes to see if there are unused edge ids
-        unused_edge_ids_in_nodes_counts_df = nodes_df.select([(~pl.col("id").str.contains_any(unique_edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
-        unused_node_ids_in_edges_counts_df = edges_df.select([(~pl.col("subject").str.contains_any(unique_node_ids)).sum().alias("invalid_node_ids_in_edges_subject_count"),
-                                                              (~pl.col("object").str.contains_any(unique_node_ids)).sum().alias("invalid_node_ids_in_edges_object_count")])
+        unused_edge_ids_in_nodes_counts_df = nodes_df.select(
+            [(~pl.col("id").str.contains_any(unique_edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")]
+        )
+        unused_node_ids_in_edges_counts_df = edges_df.select(
+            [
+                (~pl.col("subject").str.contains_any(unique_node_ids)).sum().alias("invalid_node_ids_in_edges_subject_count"),
+                (~pl.col("object").str.contains_any(unique_node_ids)).sum().alias("invalid_node_ids_in_edges_object_count"),
+            ]
+        )
 
         logger.info(unused_edge_ids_in_nodes_counts_df.head())
         logger.info(unused_node_ids_in_edges_counts_df.head())

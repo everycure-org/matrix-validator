@@ -32,7 +32,6 @@ class Validator(ABC):
             for item in preferred_prefixes_per_class["biolink_class_prefixes"]
         }
 
-
     @abstractmethod
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
