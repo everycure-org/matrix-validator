@@ -659,6 +659,23 @@ files = [
 ]
 
 [[package]]
+name = "matrix-schema"
+version = "0.2.0"
+description = "The collected MATRIX schemas"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "matrix_schema-0.2.0-py3-none-any.whl", hash = "sha256:5e5c16c54fb2893449d89d35c3b0f0ece997aea357c36aaffccb294c37256084"},
+    {file = "matrix_schema-0.2.0.tar.gz", hash = "sha256:8a8b695745e617028ab867b75fbac5579eab24f6a8a97c2f972a307bbdf58102"},
+]
+
+[package.dependencies]
+linkml-runtime = ">=1.8.0"
+
+[package.extras]
+docs = ["jinjanator (>=24.4.0)"]
+
+[[package]]
 name = "mdit-py-plugins"
 version = "0.4.2"
 description = "Collection of plugins for markdown-it-py"
@@ -2194,4 +2211,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "bf2d596c545bb5391f23986e1346d8e004a708cfa31d61cf07e6fbd5429c0229"
+content-hash = "75fee4962d8d38728834558c4634983e6cdca40dc7adb00aae72d0e456df7df8"
