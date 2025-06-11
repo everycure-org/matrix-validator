@@ -32,7 +32,6 @@ def format_schema_error(error: dict) -> str:
     return "\n".join(formatted_messages) if formatted_messages else str(error)
 
 
-
 class ValidatorPanderaImpl(Validator):
     """Pandera-based validator implementation."""
 
@@ -78,7 +77,7 @@ class ValidatorPanderaImpl(Validator):
         # Create report directory if it doesn't exist
         if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
             os.makedirs(self.get_report_dir())
-            
+
         # Write validation report
         self.write_report(validation_reports)
         logging.info(f"Validation report written to {self.get_report_file()}")

@@ -116,7 +116,7 @@ class ValidatorPolarsImpl(Validator):
         # Create report directory if it doesn't exist
         if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
             os.makedirs(self.get_report_dir())
-            
+
         # Write validation report
         self.write_report(validation_reports)
         logging.info(f"Validation report written to {self.get_report_file()}")
@@ -313,7 +313,7 @@ def validate_nodes_and_edges(nodes, edges, limit):
         .select([pl.col("subject"), pl.col("predicate"), pl.col("object")])
         .collect()
     )
-    
+
     # Extract all edge IDs (subjects and objects)
     edge_ids = (
         pl.concat(
@@ -330,18 +330,16 @@ def validate_nodes_and_edges(nodes, edges, limit):
 
     # Load node data
     nodes_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
-    
+
     # If limit is specified, apply it to both nodes and edges
     if limit:
         nodes_df = nodes_df.limit(limit)
-    
+
     # Collect node data
     nodes_df = nodes_df.collect()
 
     # Check if all edge IDs exist in node IDs
-    counts_df = nodes_df.select(
-        [(~pl.col("id").str.contains_any(edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")]
-    )
+    counts_df = nodes_df.select([(~pl.col("id").str.contains_any(edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
 
     logger.info(counts_df.head())
 
@@ -357,77 +355,64 @@ def validate_nodes_and_edges(nodes, edges, limit):
         # Log the DataFrame structures for debugging
         logger.info(f"Nodes DataFrame columns: {nodes_df.columns}")
         logger.info(f"Edges DataFrame columns: {edges_df.columns}")
-        
+
         edge_type_analysis = util.analyze_edge_types(nodes_df, edges_df)
         logger.info(f"Edge type analysis results shape: {edge_type_analysis.shape}")
-        
+
         # Get counts of valid and invalid edge types
         valid_edges = edge_type_analysis.filter(pl.col("valid") == True)
         invalid_edges = edge_type_analysis.filter(pl.col("valid") == False)
-        
+
         # Count unique edge types and edge instances
         unique_valid_types = len(valid_edges)
         unique_invalid_types = len(invalid_edges)
         total_unique_types = unique_valid_types + unique_invalid_types
-        
+
         valid_count = valid_edges.select(pl.sum("count")).item(0, 0) if not valid_edges.is_empty() else 0
         invalid_count = invalid_edges.select(pl.sum("count")).item(0, 0) if not invalid_edges.is_empty() else 0
         total_count = valid_count + invalid_count
-        
+
         logger.info(f"Valid edges: {valid_count} ({unique_valid_types} unique types)")
         logger.info(f"Invalid edges: {invalid_count} ({unique_invalid_types} unique types)")
         logger.info(f"Total: {total_count} ({total_unique_types} unique types)")
-        
+
         # Calculate percentages
         valid_percent = (valid_count / total_count * 100) if total_count > 0 else 0
         invalid_percent = (invalid_count / total_count * 100) if total_count > 0 else 0
-        
+
         # Create a JSON report for edge type analysis
         edge_type_summary = {
             "edge_type_analysis": {
                 "total_edges": total_count,
-                "valid_edges": {
-                    "count": valid_count,
-                    "percent": round(valid_percent, 2),
-                    "unique_types": unique_valid_types
-                },
-                "invalid_edges": {
-                    "count": invalid_count,
-                    "percent": round(invalid_percent, 2),
-                    "unique_types": unique_invalid_types
-                }
+                "valid_edges": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
+                "invalid_edges": {"count": invalid_count, "percent": round(invalid_percent, 2), "unique_types": unique_invalid_types},
             }
         }
-        
+
         validation_reports.append(json.dumps(edge_type_summary, indent=2))
-        
+
         # Add more detailed report about invalid edge types if there are any
         if invalid_count > 0:
             invalid_edge_types = edge_type_analysis.filter(pl.col("valid") == False).sort("count", descending=True)
             logger.info(f"Found {unique_invalid_types} distinct invalid edge types")
-            
+
             # Format invalid edge types for reporting (limit to top 20 for readability)
             invalid_types_report = {}
             for row in invalid_edge_types.head(20).iter_rows(named=True):
                 key = f"{row['subject_category']}-{row['predicate']}-{row['object_category']}"
-                value = row['count']
+                value = row["count"]
                 invalid_types_report[key] = value
 
-            
             # Build a dictionary for invalid edge types
             invalid_edge_types_dict = {
                 "warning": f"{invalid_count} edges ({invalid_percent:.2f}%) have invalid edge types according to the biolink model.",
-                "valid": {
-                    "count": valid_count,
-                    "percent": round(valid_percent, 2),
-                    "unique_types": unique_valid_types
-                },
+                "valid": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
                 "invalid": {
                     "count": invalid_count,
                     "percent": round(invalid_percent, 2),
                     "unique_types": unique_invalid_types,
-                    "top_invalid_edge_types": invalid_types_report
-                }
+                    "top_invalid_edge_types": invalid_types_report,
+                },
             }
             validation_reports.append(json.dumps(invalid_edge_types_dict, indent=2))
             logger.info("Added invalid edge types warning to validation report")
@@ -438,7 +423,7 @@ def validate_nodes_and_edges(nodes, edges, limit):
             )
             validation_reports.append(success_message)
             logger.info(success_message)
-            
+
     except Exception as e:
         logger.error(f"Error analyzing edge types: {str(e)}")
         logger.exception("Full traceback:")

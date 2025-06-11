@@ -455,6 +455,6 @@ class ValidatorPurePythonImpl(Validator):
         # Create report directory if it doesn't exist
         if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
             os.makedirs(self.get_report_dir())
-            
+
         # Write validation report
         self.write_report(validation_reports)

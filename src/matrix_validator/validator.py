@@ -18,7 +18,7 @@ class Validator(ABC):
         self.output_format = "txt"
         self.config = config
         tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
-        
+
         # Handle the case when config is None or not provided
         if config is not None:
             with open(config, "r") as config_file:
@@ -26,7 +26,7 @@ class Validator(ABC):
                 if "supplemental_prefixes" in config_contents and config_contents["supplemental_prefixes"]:
                     supplemental_prefixes = list(config_contents["supplemental_prefixes"])
                     tmp_prefixes.extend(supplemental_prefixes)
-                    
+
         self.prefixes = list(set(tmp_prefixes))
 
     @abstractmethod
