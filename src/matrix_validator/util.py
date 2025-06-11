@@ -97,9 +97,6 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame) -> pl.Dat
     # Get valid edge types from biolink model
     valid_edge_types = get_valid_edge_types()
 
-    # Convert valid edge types to a DataFrame
-    valid_edge_df = pl.DataFrame(valid_edge_types)
-
     # Check if each edge type in our data is valid
     edge_type_analysis = edge_type_counts.with_columns(
         valid=pl.struct(["subject_category", "predicate", "object_category"]).is_in(
