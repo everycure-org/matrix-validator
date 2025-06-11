@@ -17,6 +17,7 @@ class Validator(ABC):
         self.report_dir = None
         self.output_format = "txt"
         self.config = config
+
         tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
         with open(config, "r") as config_file:
             config_contents = yaml.safe_load(config_file)
@@ -24,6 +25,12 @@ class Validator(ABC):
             if supplemental_prefixes:
                 tmp_prefixes.extend(supplemental_prefixes)
         self.prefixes = list(set(tmp_prefixes))
+
+        preferred_prefixes_per_class = json.loads(il_resources.files(prefixmaps).joinpath("preferred_prefixes_per_class.json").read_text())
+        self.class_prefix_map = {
+            item["class_name"]: [prefix["prefix"] for prefix in item["prefix_map"]]
+            for item in preferred_prefixes_per_class["biolink_class_prefixes"]
+        }
 
     @abstractmethod
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
