@@ -5,9 +5,8 @@ import json
 import polars as pl
 
 
-def validate(df, edge_ids: list, file):
+def validate(df, edge_ids: list, column: str):
     """Validate contains Edge subject/object exist in Nodes."""
-    column = "id"
     violations_df = df.select(
         [
             pl.when(~pl.col(column).str.contains_any(edge_ids))
