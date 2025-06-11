@@ -45,7 +45,7 @@ def get_valid_edge_types() -> list[dict[str, str]]:
     # get the values from the rest of the lines
     values = [line.split("\t") for line in valid_edge_string.splitlines()[1:]]
     # create a list of dictionaries
-    return [dict(zip(keys, value)) for value in values if len(value) == len(keys)]
+    return [dict(zip(keys, value, strict=False)) for value in values if len(value) == len(keys)]
 
 
 def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame) -> pl.DataFrame:
@@ -63,6 +63,7 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame) -> pl.Dat
 
     Returns:
         Polars DataFrame with columns: subject_category, predicate, object_category, valid, count
+
     """
     # Make sure required columns are present
     required_node_cols = ["id", "category"]

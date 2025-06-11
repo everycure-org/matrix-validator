@@ -1,6 +1,7 @@
 """Polars-based validator check."""
 
 import json
+
 import polars as pl
 
 from matrix_validator.checks import DELIMITED_BY_PIPES

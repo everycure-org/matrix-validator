@@ -2,8 +2,10 @@
 
 import unittest
 from unittest import mock
+
 import polars as pl
-from matrix_validator.util import get_valid_edge_types, analyze_edge_types
+
+from matrix_validator.util import analyze_edge_types, get_valid_edge_types
 
 
 class TestUtilFunctions(unittest.TestCase):
