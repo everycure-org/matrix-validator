@@ -412,15 +412,19 @@ def report_violations(violations, found_unknown_prefixes):
 class ValidatorPurePythonImpl(Validator):
     """Pure python-based validator implementation."""
 
-    def __init__(self, config):
+    def __init__(self, config=None):
         """Create a new instance of the python-based validator."""
         super().__init__(config)
+        # Set a default report directory if none is provided
+        if not self.get_report_dir():
+            self.set_report_dir("output")
 
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         # Track all rule-based violations in this dictionary:
         #   { rule_name: { "count": int, "examples": [ ... ] }, ... }
         violations = defaultdict(lambda: {"count": 0, "examples": []})
+        validation_reports = []
 
         # We'll store unknown prefixes in a Counter for multi-occurrence tallies
         found_unknown_prefixes = Counter()
@@ -431,5 +435,26 @@ class ValidatorPurePythonImpl(Validator):
         # 2) Check edges
         check_edges_file(edges_file_path, node_ids, violations, self.prefixes, found_unknown_prefixes)
 
-        # 3) Final report
-        report_violations(violations, found_unknown_prefixes)
+        # 3) Generate validation report
+        for rule_name in ALL_POSSIBLE_RULES:
+            if rule_name in violations and violations[rule_name]["count"] > 0:
+                count = violations[rule_name]["count"]
+                examples = violations[rule_name]["examples"]
+                report = f"{rule_name}: {count} occurrences\nExamples:\n"
+                for ex in examples:
+                    report += f"  * {ex}\n"
+                validation_reports.append(report)
+
+        # Report unknown prefixes
+        if len(found_unknown_prefixes) > 0:
+            report = "Unknown prefixes:\n"
+            for prefix, count in found_unknown_prefixes.most_common():
+                report += f"  {prefix} ({count} occurrences)\n"
+            validation_reports.append(report)
+
+        # Create report directory if it doesn't exist
+        if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
+            os.makedirs(self.get_report_dir())
+            
+        # Write validation report
+        self.write_report(validation_reports)

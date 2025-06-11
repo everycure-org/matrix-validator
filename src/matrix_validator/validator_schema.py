@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 import polars as pl
 
@@ -31,22 +32,16 @@ def format_schema_error(error: dict) -> str:
     return "\n".join(formatted_messages) if formatted_messages else str(error)
 
 
-def write_report(output_format, report_file, validation_reports):
-    """Write the validation report to a file."""
-    if report_file:
-        with open(report_file, "w") as report:
-            if output_format == "txt":
-                report.write("\n".join(validation_reports))
-            elif output_format == "md":
-                report.write("\n\n".join([f"## {line}" for line in validation_reports]))
-
 
 class ValidatorPanderaImpl(Validator):
     """Pandera-based validator implementation."""
 
-    def __init__(self, config):
+    def __init__(self, config=None):
         """Create a new instance of the pandera-based validator."""
         super().__init__(config)
+        # Set a default report directory if none is provided
+        if not self.get_report_dir():
+            self.set_report_dir("output")
 
     def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
@@ -78,7 +73,12 @@ class ValidatorPanderaImpl(Validator):
                     validation_reports.append(f"❌ **Edges Validation Failed**:\n{format_schema_error(error_message)}")
             except Exception as e:
                 error_message = str(e)
-                validation_reports.append("❌ **Edges Validation Failed**:\n No valid data frame could be loaded.\n{error_message}")
+                validation_reports.append(f"❌ **Edges Validation Failed**:\n No valid data frame could be loaded.\n{error_message}")
 
-        if self.is_set_report_dir():
-            write_report(self.get_output_format(), self.get_report_file(), validation_reports)
+        # Create report directory if it doesn't exist
+        if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
+            os.makedirs(self.get_report_dir())
+            
+        # Write validation report
+        self.write_report(validation_reports)
+        logging.info(f"Validation report written to {self.get_report_file()}")

@@ -1,5 +1,6 @@
 """Polars-based validator check."""
 
+import json
 import polars as pl
 from polars import DataFrame
 
@@ -16,6 +17,28 @@ def validate(df: DataFrame, column, bm_agent_types: list):
             ]
         )
         .filter(pl.col(f"invalid_contains_biolink_model_agent_type_{column}").is_not_null())
-        .unique()
     )
-    return violations_df.write_ndjson()
+    
+    # Count total violations
+    total_violations = len(violations_df)
+    if total_violations == 0:
+        return ""
+    
+    # Get unique violations and limit to 10 examples
+    unique_violations = violations_df.unique()
+    examples = unique_violations.get_column(f"invalid_contains_biolink_model_agent_type_{column}").head(10).to_list()
+    
+    # Create a summary report
+    report = {
+        "total_violations": total_violations,
+        "unique_violations": len(unique_violations),
+        "examples": examples,
+        "valid_values": bm_agent_types
+    }
+    
+    # Format output as a single JSON string
+    result = {
+        f"invalid_contains_biolink_model_agent_type_{column}_summary": report
+    }
+    
+    return json.dumps(result, indent=2)
