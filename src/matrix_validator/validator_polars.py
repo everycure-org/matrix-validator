@@ -359,7 +359,7 @@ class ValidatorPolarsImpl(Validator):
 
         # Check if there are missing node IDs referenced in edges
         if counts_df.get_column("invalid_edge_ids_in_node_ids_count").item(0) > 0:
-            validation_reports.append(check_edge_ids_in_node_ids(nodes_df, unique_edge_ids, nodes))
+            validation_reports.append(check_edge_ids_in_node_ids(nodes_df, unique_edge_ids, "id"))
 
         # Analyze edge types
         logger.info("Analyzing edge types")

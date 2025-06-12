@@ -6,20 +6,27 @@ import polars as pl
 
 
 def validate(df, edge_ids: list, column: str):
-    """Validate contains Edge subject/object exist in Nodes."""
-    violations_df = df.select(
-        [
-            pl.when(~pl.col(column).str.contains_any(edge_ids))
-            .then(pl.col(column))
-            .otherwise(pl.lit(None))
-            .alias("invalid_edge_ids_in_node_ids"),
-        ]
-    ).filter(pl.col("invalid_edge_ids_in_node_ids").is_not_null())
+    """Validate that all edge subject/object IDs exist in Nodes."""
+    # Create a dataframe from edge IDs with a column name matching the nodes dataframe
+    edge_df = pl.DataFrame({column: edge_ids})
 
-    # Count total violations
-    total_violations = len(violations_df)
-    if total_violations == 0:
+    # Use an anti-join to find missing edge IDs (edge IDs not in node IDs)
+    # This is highly efficient as it uses hashing internally
+    missing_df = edge_df.join(df.select(pl.col(column)), on=column, how="anti")
+
+    # If no violations, return early
+    if missing_df.height == 0:
         return ""
+
+    # Rename the column for consistency with the rest of the function
+    violations_df = missing_df.rename({column: "invalid_edge_ids_in_node_ids"})
+
+    # For very large results, sample for reporting
+    if violations_df.height > 1000:
+        violations_df = violations_df.sample(1000, seed=42)
+
+    # Count total violations (from the original anti-join)
+    total_violations = missing_df.height
 
     # Group violations by prefix (extract prefix from before the colon)
     with_prefix = violations_df.with_columns(pl.col("invalid_edge_ids_in_node_ids").str.split(":").list.first().alias("prefix"))
@@ -27,7 +34,7 @@ def validate(df, edge_ids: list, column: str):
     # Group by prefix and count
     prefix_counts = (
         with_prefix.group_by("prefix")
-        .agg(pl.count().alias("count"), pl.col("invalid_edge_ids_in_node_ids").head(3).alias("examples"))
+        .agg(pl.len().alias("count"), pl.col("invalid_edge_ids_in_node_ids").head(3).alias("examples"))
         .sort("count", descending=True)
     )
 
