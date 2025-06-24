@@ -24,13 +24,13 @@ from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level
     validate as check_column_contains_biolink_model_knowledge_level,
 )
 from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
+from matrix_validator.checks.check_column_enum import validate as check_column_enum
 from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
 from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
 from matrix_validator.checks.check_column_no_leading_whitespace import validate as check_column_no_leading_whitespace
 from matrix_validator.checks.check_column_no_trailing_whitespace import validate as check_column_no_trailing_whitespace
-from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.checks.check_column_range import validate as check_column_range
-from matrix_validator.checks.check_column_enum import validate as check_column_enum
+from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
 from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import (
     validate as check_node_id_and_category_with_biolink_preferred_prefixes,
@@ -164,18 +164,18 @@ class ValidatorPolarsImpl(Validator):
             column_names = df.collect_schema().names()
             logger.debug(f"{column_names}")
 
-            if self.config_contents and 'nodes_attribute_checks' in self.config_contents:
-                for check in self.config_contents['nodes_attribute_checks']['checks']:
-                    if 'range' in check:
-                        if check['range']['column'] in column_names:
-                            validation_reports.append(check_column_range(df, check['range']['column'], int(check['range']['min']), int(check['range']['max'])))
-                    if 'enum' in check:
-                        if check['enum']['column'] in column_names:
-                            validation_reports.append(check_column_enum(df, check['range']['column'], list(check['range']['values'])))
-
+            if self.config_contents and "nodes_attribute_checks" in self.config_contents:
+                for check in self.config_contents["nodes_attribute_checks"]["checks"]:
+                    if "range" in check:
+                        if check["range"]["column"] in column_names:
+                            validation_reports.append(
+                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
+                            )
+                    if "enum" in check:
+                        if check["enum"]["column"] in column_names:
+                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
             try:
-
                 logger.info("collecting node counts")
 
                 counts_df = df.select(
@@ -273,17 +273,18 @@ class ValidatorPolarsImpl(Validator):
 
             column_names = df.collect_schema().names()
             logger.debug(f"{column_names}")
-            if self.config_contents and 'edges_attribute_checks' in self.config_contents:
-                for check in self.config_contents['edges_attribute_checks']['checks']:
-                    if 'range' in check:
-                        if check['range']['column'] in column_names:
-                            validation_reports.append(check_column_range(df, check['range']['column'], int(check['range']['min']), int(check['range']['max'])))
-                    if 'enum' in check:
-                        if check['enum']['column'] in column_names:
-                            validation_reports.append(check_column_enum(df, check['range']['column'], list(check['range']['values'])))
+            if self.config_contents and "edges_attribute_checks" in self.config_contents:
+                for check in self.config_contents["edges_attribute_checks"]["checks"]:
+                    if "range" in check:
+                        if check["range"]["column"] in column_names:
+                            validation_reports.append(
+                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
+                            )
+                    if "enum" in check:
+                        if check["enum"]["column"] in column_names:
+                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
             try:
-
                 logger.info("collecting edge counts")
 
                 counts_df = df.select(

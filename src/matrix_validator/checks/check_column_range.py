@@ -1,8 +1,8 @@
 """Polars-based validator check."""
 
 import json
-
 import logging
+
 import polars as pl
 from polars import DataFrame
 
