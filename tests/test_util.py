@@ -2,9 +2,9 @@
 
 import unittest
 from unittest import mock
-import tomllib
 
 import polars as pl
+import tomllib
 
 from matrix_validator.util import analyze_edge_types, get_valid_edge_types
 
@@ -209,15 +209,15 @@ class TestUtilFunctions(unittest.TestCase):
         with open("../config.toml", "rb") as config_file:
             config_contents = tomllib.load(config_file)
 
-            if config_contents['biolink']['supplemental_prefixes']:
-                supplemental_prefixes = config_contents['biolink']['supplemental_prefixes']
+            if config_contents["biolink"]["supplemental_prefixes"]:
+                supplemental_prefixes = config_contents["biolink"]["supplemental_prefixes"]
                 for prefix in supplemental_prefixes:
                     print(prefix)
 
-            for check in config_contents['edges_attribute_checks']['checks']:
-                if 'range' in check:
-                    print(check['range']['column'])
+            for check in config_contents["edges_attribute_checks"]["checks"]:
+                if "range" in check:
+                    print(check["range"]["column"])
 
-            for check in config_contents['nodes_attribute_checks']['checks']:
-                if 'range' in check:
-                    print(check['range']['column'])
+            for check in config_contents["nodes_attribute_checks"]["checks"]:
+                if "range" in check:
+                    print(check["range"]["column"])
