@@ -25,9 +25,9 @@ class Validator(ABC):
                 config_contents = tomllib.load(config_file)
                 self.config_contents = config_contents
 
-            if config_contents['biolink']['supplemental_prefixes']:
-                    supplemental_prefixes = list(config_contents['biolink']['supplemental_prefixes'])
-                    tmp_prefixes.extend(supplemental_prefixes)
+            if config_contents["biolink"]["supplemental_prefixes"]:
+                supplemental_prefixes = list(config_contents["biolink"]["supplemental_prefixes"])
+                tmp_prefixes.extend(supplemental_prefixes)
 
         self.prefixes = list(set(tmp_prefixes))
 
