@@ -8,6 +8,7 @@ from polars import DataFrame
 
 logger = logging.getLogger(__name__)
 
+
 def validate(df: DataFrame, column, min, max):
     """Validate range."""
     violations_df = df.select(
