@@ -206,7 +206,7 @@ class TestUtilFunctions(unittest.TestCase):
 
     def test_config_toml(self):
         """Test toml config."""
-        with open("../config.toml", "rb") as config_file:
+        with open("./config.toml", "rb") as config_file:
             config_contents = tomllib.load(config_file)
 
             if config_contents["biolink"]["supplemental_prefixes"]:
