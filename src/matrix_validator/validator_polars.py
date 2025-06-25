@@ -24,10 +24,12 @@ from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level
     validate as check_column_contains_biolink_model_knowledge_level,
 )
 from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
+from matrix_validator.checks.check_column_enum import validate as check_column_enum
 from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
 from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
 from matrix_validator.checks.check_column_no_leading_whitespace import validate as check_column_no_leading_whitespace
 from matrix_validator.checks.check_column_no_trailing_whitespace import validate as check_column_no_trailing_whitespace
+from matrix_validator.checks.check_column_range import validate as check_column_range
 from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
 from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import (
@@ -150,16 +152,30 @@ class ValidatorPolarsImpl(Validator):
 
         # and if schema check is good, move on to data checks
         if not validation_reports:
-            usable_columns = [pl.col("id"), pl.col("category")]
+            # usable_columns = [pl.col("id"), pl.col("category")]
+            # main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select(usable_columns)
+            main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
 
-            main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select(usable_columns)
+            if limit:
+                df = main_df.limit(limit).collect()
+            else:
+                df = main_df.collect()
+
+            column_names = df.collect_schema().names()
+            logger.debug(f"{column_names}")
+
+            if self.config_contents and "nodes_attribute_checks" in self.config_contents:
+                for check in self.config_contents["nodes_attribute_checks"]["checks"]:
+                    if "range" in check:
+                        if check["range"]["column"] in column_names:
+                            validation_reports.append(
+                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
+                            )
+                    if "enum" in check:
+                        if check["enum"]["column"] in column_names:
+                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
             try:
-                if limit:
-                    df = main_df.limit(limit).collect()
-                else:
-                    df = main_df.collect()
-
                 logger.info("collecting node counts")
 
                 counts_df = df.select(
@@ -245,16 +261,30 @@ class ValidatorPolarsImpl(Validator):
 
         # and if schema check is good, move on to data checks
         if not validation_reports:
-            usable_columns = [pl.col("subject"), pl.col("predicate"), pl.col("object"), pl.col("knowledge_level"), pl.col("agent_type")]
+            # usable_columns = [pl.col("subject"), pl.col("predicate"), pl.col("object"), pl.col("knowledge_level"), pl.col("agent_type")]
+            # main_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select(usable_columns)
 
-            main_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).select(usable_columns)
+            main_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
+
+            if limit:
+                df = main_df.limit(limit).collect()
+            else:
+                df = main_df.collect()
+
+            column_names = df.collect_schema().names()
+            logger.debug(f"{column_names}")
+            if self.config_contents and "edges_attribute_checks" in self.config_contents:
+                for check in self.config_contents["edges_attribute_checks"]["checks"]:
+                    if "range" in check:
+                        if check["range"]["column"] in column_names:
+                            validation_reports.append(
+                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
+                            )
+                    if "enum" in check:
+                        if check["enum"]["column"] in column_names:
+                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
             try:
-                if limit:
-                    df = main_df.limit(limit).collect()
-                else:
-                    df = main_df.collect()
-
                 logger.info("collecting edge counts")
 
                 counts_df = df.select(
@@ -365,8 +395,8 @@ class ValidatorPolarsImpl(Validator):
         logger.info("Analyzing edge types")
         try:
             # Log the DataFrame structures for debugging
-            logger.info(f"Nodes DataFrame columns: {nodes_df.columns}")
-            logger.info(f"Edges DataFrame columns: {edges_df.columns}")
+            logger.debug(f"Nodes DataFrame columns: {nodes_df.columns}")
+            logger.debug(f"Edges DataFrame columns: {edges_df.columns}")
 
             edge_type_analysis = util.analyze_edge_types(nodes_df, edges_df)
             logger.info(f"Edge type analysis results shape: {edge_type_analysis.shape}")

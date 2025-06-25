@@ -5,7 +5,7 @@ import os
 from abc import ABC, abstractmethod
 from importlib import resources as il_resources
 
-import yaml
+import tomllib
 from biolink_model import prefixmaps
 
 
@@ -16,17 +16,18 @@ class Validator(ABC):
         """Create a new instance of the validator."""
         self.report_dir = None
         self.output_format = "txt"
-        self.config = config
 
         tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
 
         # Handle the case when config is None or not provided
         if config is not None:
-            with open(config, "r") as config_file:
-                config_contents = yaml.safe_load(config_file)
-                if "supplemental_prefixes" in config_contents and config_contents["supplemental_prefixes"]:
-                    supplemental_prefixes = list(config_contents["supplemental_prefixes"])
-                    tmp_prefixes.extend(supplemental_prefixes)
+            with open(config, "rb") as config_file:
+                config_contents = tomllib.load(config_file)
+                self.config_contents = config_contents
+
+            if config_contents["biolink"]["supplemental_prefixes"]:
+                supplemental_prefixes = list(config_contents["biolink"]["supplemental_prefixes"])
+                tmp_prefixes.extend(supplemental_prefixes)
 
         self.prefixes = list(set(tmp_prefixes))
 

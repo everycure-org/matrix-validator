@@ -14,7 +14,7 @@ class TestValidate(unittest.TestCase):
 
     def test_version_type(self):
         """Test validation method."""
-        validator = ValidatorPanderaImpl(config="./config.yaml")
+        validator = ValidatorPanderaImpl(config="./config.toml")
         validator.validate(nodes_file_path=None, edges_file_path=None)
 
     def test_biolink_prefix_class_mapping(self):

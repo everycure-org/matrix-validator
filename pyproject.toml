@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 click = "*"
 polars-lts-cpu = "^1.23.0"
 importlib-metadata = ">=8.2.0"
