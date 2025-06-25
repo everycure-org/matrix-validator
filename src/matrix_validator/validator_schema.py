@@ -38,11 +38,8 @@ class ValidatorPanderaImpl(Validator):
     def __init__(self, config=None):
         """Create a new instance of the pandera-based validator."""
         super().__init__(config)
-        # Set a default report directory if none is provided
-        if not self.get_report_dir():
-            self.set_report_dir("output")
 
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
+    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
 
@@ -74,10 +71,9 @@ class ValidatorPanderaImpl(Validator):
                 error_message = str(e)
                 validation_reports.append(f"❌ **Edges Validation Failed**:\n No valid data frame could be loaded.\n{error_message}")
 
-        # Create report directory if it doesn't exist
-        if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
-            os.makedirs(self.get_report_dir())
-
         # Write validation report
-        self.write_report(validation_reports)
-        logging.info(f"Validation report written to {self.get_report_file()}")
+        self.write_output(validation_reports)
+
+        if len(validation_reports) > 0:
+            return 1
+        return 0

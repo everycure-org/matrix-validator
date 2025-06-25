@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from typing import Optional
 
 import patito as pt
@@ -37,7 +36,7 @@ from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_p
 )
 from matrix_validator.validator import Validator
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("matrix-validator.polars")
 
 BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
 BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_agent_type_keys()
@@ -101,13 +100,10 @@ class ValidatorPolarsImpl(Validator):
         """Create a new instance of the polars-based validator."""
         super().__init__(config)
         # Set a default report directory if none is provided
-        if not self.get_report_dir():
-            self.set_report_dir("output")
 
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
+    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
-
         if nodes_file_path:
             tmp_val_violations = self.validate_kg_nodes(nodes_file_path, limit)
             validation_reports.extend(tmp_val_violations)
@@ -118,13 +114,12 @@ class ValidatorPolarsImpl(Validator):
         if nodes_file_path and edges_file_path:
             validation_reports.extend(self.validate_nodes_and_edges(nodes_file_path, edges_file_path, limit))
 
-        # Create report directory if it doesn't exist
-        if self.get_report_dir() and not os.path.exists(self.get_report_dir()):
-            os.makedirs(self.get_report_dir())
-
         # Write validation report
-        self.write_report(validation_reports)
-        logging.info(f"Validation report written to {self.get_report_file()}")
+        self.write_output(validation_reports)
+
+        if len(validation_reports) > 0:
+            return 1
+        return 0
 
     def validate_kg_nodes(self, nodes, limit):
         """Validate a knowledge graph using optional nodes TSV files."""
