@@ -178,7 +178,7 @@ class ValidatorPolarsImpl(Validator):
             if limit:
                 nodes = nodes.limit(limit).collect()
             else:
-                nodes = nodes.collect()
+                nodes = nodes.collect(streaming=True)
 
             column_names = nodes.collect_schema().names()
             logger.debug(f"{column_names}")
@@ -348,7 +348,7 @@ class ValidatorPolarsImpl(Validator):
             if limit:
                 edges = edges.limit(limit).collect()
             else:
-                edges = edges.collect()
+                edges = edges.collect(streaming=True)
 
             column_names = edges.collect_schema().names()
             logger.debug(f"{column_names}")
@@ -509,7 +509,7 @@ class ValidatorPolarsImpl(Validator):
         logger.info("Validating nodes & edges")
         validation_reports = []
 
-        edges_df = edges_df.select([pl.col("subject"), pl.col("predicate"), pl.col("object")]).collect()
+        edges_df = edges_df.select([pl.col("subject"), pl.col("predicate"), pl.col("object")]).collect(streaming=True)
 
         unique_edge_ids = (
             pl.concat(
@@ -528,7 +528,7 @@ class ValidatorPolarsImpl(Validator):
         if limit:
             nodes_df = nodes_df.limit(limit).collect()
         else:
-            nodes_df = nodes_df.limit(limit)
+            nodes_df = nodes_df.collect(streaming=True)
 
         validation_reports.extend(self.analyze_edge_types(nodes_df, edges_df, unique_edge_ids))
 
