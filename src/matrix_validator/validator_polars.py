@@ -101,7 +101,7 @@ class ValidatorPolarsImpl(Validator):
         super().__init__(config)
         # Set a default report directory if none is provided
 
-    def validate_from_dataframe(self, nodes: pl.lazyframe.LazyFrame, edges: pl.lazyframe.LazyFrame):
+    def validate_from_dataframe(self, nodes: pl.DataFrame, edges: pl.DataFrame):
         validation_reports = []
 
         validation_reports.extend(self.validate_kg_nodes_from_dataframe(nodes))
@@ -160,14 +160,14 @@ class ValidatorPolarsImpl(Validator):
 
         return validation_reports
 
-    def validate_kg_nodes_from_dataframe(self, nodes: pl.lazyframe.LazyFrame, limit: int | None = None):
+    def validate_kg_nodes_from_dataframe(self, nodes: pl.DataFrame, limit: int | None = None):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        validation_reports.extend(self.validate_kg_nodes_schema_from_dataframe(nodes.limit(10).collect()))
+        validation_reports.extend(self.validate_kg_nodes_schema_from_dataframe(nodes.limit(10)))
 
         if validation_reports:
             return validation_reports
@@ -176,9 +176,7 @@ class ValidatorPolarsImpl(Validator):
         if not validation_reports:
 
             if limit:
-                nodes = nodes.limit(limit).collect()
-            else:
-                nodes = nodes.collect(streaming=True)
+                nodes = nodes.limit(limit)
 
             column_names = nodes.collect_schema().names()
             logger.debug(f"{column_names}")
@@ -331,14 +329,14 @@ class ValidatorPolarsImpl(Validator):
 
         return validation_reports
 
-    def validate_kg_edges_from_dataframe(self, edges: pl.lazyframe.LazyFrame, limit: int | None = None):
+    def validate_kg_edges_from_dataframe(self, edges: pl.DataFrame, limit: int | None = None):
         """Validate a knowledge graph using optional edges TSV files."""
         logger.info("Validating edges TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        validation_reports.extend(self.validate_kg_edges_schema_from_dataframe(edges.limit(10).collect()))
+        validation_reports.extend(self.validate_kg_edges_schema_from_dataframe(edges.limit(10)))
 
         if validation_reports:
             return validation_reports
@@ -346,9 +344,7 @@ class ValidatorPolarsImpl(Validator):
         # and if schema check is good, move on to data checks
         if not validation_reports:
             if limit:
-                edges = edges.limit(limit).collect()
-            else:
-                edges = edges.collect(streaming=True)
+                edges = edges.limit(limit)
 
             column_names = edges.collect_schema().names()
             logger.debug(f"{column_names}")
@@ -504,12 +500,12 @@ class ValidatorPolarsImpl(Validator):
 
         return validation_reports
 
-    def validate_nodes_and_edges_from_dataframe(self, nodes_df: pl.lazyframe.LazyFrame, edges_df: pl.lazyframe.LazyFrame, limit: int | None = None):
+    def validate_nodes_and_edges_from_dataframe(self, nodes_df: pl.DataFrame, edges_df: pl.DataFrame, limit: int | None = None):
         """Validate a knowledge graph nodes vs edges."""
         logger.info("Validating nodes & edges")
         validation_reports = []
 
-        edges_df = edges_df.select([pl.col("subject"), pl.col("predicate"), pl.col("object")]).collect(streaming=True)
+        edges_df = edges_df.select([pl.col("subject"), pl.col("predicate"), pl.col("object")])
 
         unique_edge_ids = (
             pl.concat(
@@ -526,9 +522,7 @@ class ValidatorPolarsImpl(Validator):
 
         # If limit is specified, apply it to both nodes and edges
         if limit:
-            nodes_df = nodes_df.limit(limit).collect()
-        else:
-            nodes_df = nodes_df.collect(streaming=True)
+            nodes_df = nodes_df.limit(limit)
 
         validation_reports.extend(self.analyze_edge_types(nodes_df, edges_df, unique_edge_ids))
 
