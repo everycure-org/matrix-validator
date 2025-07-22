@@ -22,8 +22,7 @@ from matrix_validator.checks.check_column_contains_biolink_model_agent_type impo
 from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import (
     validate as check_column_contains_biolink_model_knowledge_level,
 )
-from matrix_validator.checks.check_column_contains_biolink_model_prefix import \
-    validate as check_column_contains_biolink_model_prefix
+from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
 from matrix_validator.checks.check_column_enum import validate as check_column_enum
 from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
 from matrix_validator.checks.check_column_is_valid_curie import validate as check_column_is_valid_curie
@@ -116,7 +115,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
             return 1
         return 0
 
-
     def validate_kg_nodes(self, limit: int | None = None):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
@@ -144,19 +142,16 @@ class ValidatorPolarsDataFrameImpl(Validator):
                         range_check = check["range"]
                         if range_check["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(self._nodes, range_check["column"], int(range_check["min"]),
-                                                   int(range_check["max"]))
+                                check_column_range(self._nodes, range_check["column"], int(range_check["min"]), int(range_check["max"]))
                             )
                     if "enum" in check:
                         enum_check = check["enum"]
                         if enum_check["column"] in column_names:
-                            validation_reports.append(
-                                check_column_enum(self._nodes, enum_check["column"], list(enum_check["values"])))
+                            validation_reports.append(check_column_enum(self._nodes, enum_check["column"], list(enum_check["values"])))
 
             validation_reports.extend(run_node_checks(self._nodes, self.prefixes, self.class_prefix_map))
 
         return validation_reports
-
 
     def validate_kg_edges(self, limit: int | None = None):
         """Validate a knowledge graph using optional edges TSV files."""
@@ -182,13 +177,15 @@ class ValidatorPolarsDataFrameImpl(Validator):
                     if "range" in check:
                         if check["range"]["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(self._edges, check["range"]["column"], int(check["range"]["min"]),
-                                                   int(check["range"]["max"]))
+                                check_column_range(
+                                    self._edges, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"])
+                                )
                             )
                     if "enum" in check:
                         if check["enum"]["column"] in column_names:
                             validation_reports.append(
-                                check_column_enum(self._edges, check["range"]["column"], list(check["range"]["values"])))
+                                check_column_enum(self._edges, check["range"]["column"], list(check["range"]["values"]))
+                            )
 
             validation_reports.extend(run_edge_checks(self._edges, self.prefixes))
 
@@ -258,8 +255,7 @@ class ValidatorPolarsFileImpl(Validator):
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(
-            10).collect()
+        schema_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
         validation_reports.extend(validate_kg_nodes_schema(schema_df, self.prefixes))
 
@@ -284,14 +280,12 @@ class ValidatorPolarsFileImpl(Validator):
                         range_check = check["range"]
                         if range_check["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(df, range_check["column"], int(range_check["min"]),
-                                                   int(range_check["max"]))
+                                check_column_range(df, range_check["column"], int(range_check["min"]), int(range_check["max"]))
                             )
                     if "enum" in check:
                         enum_check = check["enum"]
                         if enum_check["column"] in column_names:
-                            validation_reports.append(
-                                check_column_enum(df, enum_check["column"], list(enum_check["values"])))
+                            validation_reports.append(check_column_enum(df, enum_check["column"], list(enum_check["values"])))
 
             validation_reports.extend(run_node_checks(df, self.prefixes, self.class_prefix_map))
 
@@ -327,18 +321,15 @@ class ValidatorPolarsFileImpl(Validator):
                     if "range" in check:
                         if check["range"]["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]),
-                                                   int(check["range"]["max"]))
+                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
                             )
                     if "enum" in check:
                         if check["enum"]["column"] in column_names:
-                            validation_reports.append(
-                                check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
+                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
             validation_reports.extend(run_edge_checks(df, self.prefixes))
 
         return validation_reports
-
 
     def validate_nodes_and_edges(self, limit):
         """Validate a knowledge graph nodes vs edges."""
@@ -378,12 +369,12 @@ class ValidatorPolarsFileImpl(Validator):
 
         return validation_reports
 
+
 def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_edge_ids):
     validation_reports = []
 
     # Check if all edge IDs exist in node IDs
-    counts_df = nodes_df.select(
-        [(~pl.col("id").str.contains_any(unique_edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
+    counts_df = nodes_df.select([(~pl.col("id").str.contains_any(unique_edge_ids)).sum().alias("invalid_edge_ids_in_node_ids_count")])
 
     logger.info(counts_df.head())
 
@@ -426,10 +417,8 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
         edge_type_summary = {
             "edge_type_analysis": {
                 "total_edges": total_count,
-                "valid_edges": {"count": valid_count, "percent": round(valid_percent, 2),
-                                "unique_types": unique_valid_types},
-                "invalid_edges": {"count": invalid_count, "percent": round(invalid_percent, 2),
-                                  "unique_types": unique_invalid_types},
+                "valid_edges": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
+                "invalid_edges": {"count": invalid_count, "percent": round(invalid_percent, 2), "unique_types": unique_invalid_types},
             }
         }
 
@@ -450,8 +439,7 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
             # Build a dictionary for invalid edge types
             invalid_edge_types_dict = {
                 "warning": f"{invalid_count} edges ({invalid_percent:.2f}%) have invalid edge types according to the biolink model.",
-                "valid": {"count": valid_count, "percent": round(valid_percent, 2),
-                          "unique_types": unique_valid_types},
+                "valid": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
                 "invalid": {
                     "count": invalid_count,
                     "percent": round(invalid_percent, 2),
@@ -488,8 +476,7 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=False)
     except pt.exceptions.DataFrameValidationError as ex:
-        superfluous_columns.extend(
-            [_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
 
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=True)
@@ -506,6 +493,7 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
 
     return validation_reports
 
+
 def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
     """Validate a KG from a Polars Dataframe."""
     validation_reports = []
@@ -519,8 +507,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
     try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
     except pt.exceptions.DataFrameValidationError as ex:
-        superfluous_columns.extend(
-            [_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
 
     try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
@@ -549,19 +536,11 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
         counts_df = node_check_df.select(
             [
                 (~pl.col("id").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_id_count"),
-                (~pl.col("id").str.contains_any(prefixes)).sum().alias(
-                    "invalid_contains_biolink_model_prefix_id_count"),
-                (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX))
-                .sum()
-                .alias("invalid_starts_with_biolink_category_count"),
-                (~pl.col("category").str.contains(DELIMITED_BY_PIPES)).sum().alias(
-                    "invalid_delimited_by_pipes_category_count"),
-                (~pl.col("category").str.contains(NO_LEADING_WHITESPACE))
-                .sum()
-                .alias("invalid_no_leading_whitespace_category_count"),
-                (~pl.col("category").str.contains(NO_TRAILING_WHITESPACE))
-                .sum()
-                .alias("invalid_no_trailing_whitespace_category_count"),
+                (~pl.col("id").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_id_count"),
+                (~pl.col("category").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_category_count"),
+                (~pl.col("category").str.contains(DELIMITED_BY_PIPES)).sum().alias("invalid_delimited_by_pipes_category_count"),
+                (~pl.col("category").str.contains(NO_LEADING_WHITESPACE)).sum().alias("invalid_no_leading_whitespace_category_count"),
+                (~pl.col("category").str.contains(NO_TRAILING_WHITESPACE)).sum().alias("invalid_no_trailing_whitespace_category_count"),
             ]
         )
 
@@ -571,8 +550,7 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
             validation_reports.append(check_column_is_valid_curie(node_check_df, "id"))
 
         if counts_df.get_column("invalid_contains_biolink_model_prefix_id_count").item(0) > 0:
-            validation_reports.append(
-                check_column_contains_biolink_model_prefix(node_check_df, "id", prefixes))
+            validation_reports.append(check_column_contains_biolink_model_prefix(node_check_df, "id", prefixes))
 
         if counts_df.get_column("invalid_no_leading_whitespace_category_count").item(0) > 0:
             validation_reports.append(check_column_no_leading_whitespace(node_check_df, "category"))
@@ -601,8 +579,7 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
 
 
 def run_edge_checks(df: pl.DataFrame, prefixes: list):
-    usable_columns = [pl.col("subject"), pl.col("predicate"), pl.col("object"), pl.col("knowledge_level"),
-                      pl.col("agent_type")]
+    usable_columns = [pl.col("subject"), pl.col("predicate"), pl.col("object"), pl.col("knowledge_level"), pl.col("agent_type")]
     edge_checks_df = df.select(usable_columns)
     validation_reports = []
     try:
@@ -611,16 +588,10 @@ def run_edge_checks(df: pl.DataFrame, prefixes: list):
         counts_df = edge_checks_df.select(
             [
                 (~pl.col("subject").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_subject_count"),
-                (~pl.col("subject").str.contains_any(prefixes))
-                .sum()
-                .alias("invalid_contains_biolink_model_prefix_subject_count"),
-                (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX))
-                .sum()
-                .alias("invalid_starts_with_biolink_predicate_count"),
+                (~pl.col("subject").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_subject_count"),
+                (~pl.col("predicate").str.contains(STARTS_WITH_BIOLINK_REGEX)).sum().alias("invalid_starts_with_biolink_predicate_count"),
                 (~pl.col("object").str.contains(CURIE_REGEX)).sum().alias("invalid_curie_object_count"),
-                (~pl.col("object").str.contains_any(prefixes))
-                .sum()
-                .alias("invalid_contains_biolink_model_prefix_object_count"),
+                (~pl.col("object").str.contains_any(prefixes)).sum().alias("invalid_contains_biolink_model_prefix_object_count"),
                 (~pl.col("knowledge_level").str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS))
                 .sum()
                 .alias("invalid_contains_biolink_model_knowledge_level_count"),
@@ -636,28 +607,24 @@ def run_edge_checks(df: pl.DataFrame, prefixes: list):
             validation_reports.append(check_column_is_valid_curie(edge_checks_df, "subject"))
 
         if counts_df.get_column("invalid_contains_biolink_model_prefix_subject_count").item(0) > 0:
-            validation_reports.append(
-                check_column_contains_biolink_model_prefix(edge_checks_df, "subject", prefixes))
+            validation_reports.append(check_column_contains_biolink_model_prefix(edge_checks_df, "subject", prefixes))
 
         if counts_df.get_column("invalid_curie_object_count").item(0) > 0:
             validation_reports.append(check_column_is_valid_curie(edge_checks_df, "object"))
 
         if counts_df.get_column("invalid_contains_biolink_model_prefix_object_count").item(0) > 0:
-            validation_reports.append(
-                check_column_contains_biolink_model_prefix(edge_checks_df, "object", prefixes))
+            validation_reports.append(check_column_contains_biolink_model_prefix(edge_checks_df, "object", prefixes))
 
         if counts_df.get_column("invalid_starts_with_biolink_predicate_count").item(0) > 0:
             validation_reports.append(check_column_starts_with_biolink(edge_checks_df, "predicate"))
 
         if counts_df.get_column("invalid_contains_biolink_model_knowledge_level_count").item(0) > 0:
             validation_reports.append(
-                check_column_contains_biolink_model_knowledge_level(edge_checks_df, "knowledge_level",
-                                                                    BIOLINK_KNOWLEDGE_LEVEL_KEYS)
+                check_column_contains_biolink_model_knowledge_level(edge_checks_df, "knowledge_level", BIOLINK_KNOWLEDGE_LEVEL_KEYS)
             )
 
         if counts_df.get_column("invalid_contains_biolink_model_agent_type_count").item(0) > 0:
-            validation_reports.append(check_column_contains_biolink_model_agent_type(edge_checks_df, "agent_type",
-                                                                                     BIOLINK_AGENT_TYPE_KEYS))
+            validation_reports.append(check_column_contains_biolink_model_agent_type(edge_checks_df, "agent_type", BIOLINK_AGENT_TYPE_KEYS))
 
     except pl.exceptions.ColumnNotFoundError as ex:
         logger.error(f"missing required column: {repr(ex)}")
