@@ -96,30 +96,35 @@ def create_node_schema(prefixes: list[str]):
 
 class ValidatorPolarsDataFrameImpl(Validator):
 
-    def __init__(self, config=None):
+    def __init__(self, nodes: pl.DataFrame, edges: pl.DataFrame, config=None):
         """Create a new instance of the polars-based validator."""
-        super().__init__(config)
+        super().__init__(nodes, edges, config)
 
-    def validate(self, nodes: pl.DataFrame, edges: pl.DataFrame):
+    def validate(self, limit: int | None = None) -> int:
         validation_reports = []
 
-        validation_reports.extend(self.validate_kg_nodes(nodes))
+        validation_reports.extend(self.validate_kg_nodes())
 
-        validation_reports.extend(self.validate_kg_edges(edges))
+        validation_reports.extend(self.validate_kg_edges())
 
-        validation_reports.extend(self.validate_nodes_and_edges(nodes, edges))
+        validation_reports.extend(self.validate_nodes_and_edges())
 
-        return "\n".join(validation_reports)
+        # Write validation report
+        self.write_output(validation_reports)
+
+        if len(validation_reports) > 0:
+            return 1
+        return 0
 
 
-    def validate_kg_nodes(self, nodes: pl.DataFrame, limit: int | None = None):
+    def validate_kg_nodes(self, limit: int | None = None):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        validation_reports.extend(validate_kg_nodes_schema(nodes.limit(10), self.prefixes))
+        validation_reports.extend(validate_kg_nodes_schema(self._nodes.limit(10), self.prefixes))
 
         if validation_reports:
             return validation_reports
@@ -128,9 +133,9 @@ class ValidatorPolarsDataFrameImpl(Validator):
         if not validation_reports:
 
             if limit:
-                nodes = nodes.limit(limit)
+                self._nodes = self._nodes.limit(limit)
 
-            column_names = nodes.collect_schema().names()
+            column_names = self._nodes.collect_schema().names()
             logger.debug(f"{column_names}")
 
             if self.config_contents and "nodes_attribute_checks" in self.config_contents:
@@ -139,28 +144,28 @@ class ValidatorPolarsDataFrameImpl(Validator):
                         range_check = check["range"]
                         if range_check["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(nodes, range_check["column"], int(range_check["min"]),
+                                check_column_range(self._nodes, range_check["column"], int(range_check["min"]),
                                                    int(range_check["max"]))
                             )
                     if "enum" in check:
                         enum_check = check["enum"]
                         if enum_check["column"] in column_names:
                             validation_reports.append(
-                                check_column_enum(nodes, enum_check["column"], list(enum_check["values"])))
+                                check_column_enum(self._nodes, enum_check["column"], list(enum_check["values"])))
 
-            validation_reports.extend(run_node_checks(nodes, self.prefixes, self.class_prefix_map))
+            validation_reports.extend(run_node_checks(self._nodes, self.prefixes, self.class_prefix_map))
 
         return validation_reports
 
 
-    def validate_kg_edges(self, edges: pl.DataFrame, limit: int | None = None):
+    def validate_kg_edges(self, limit: int | None = None):
         """Validate a knowledge graph using optional edges TSV files."""
         logger.info("Validating edges TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        validation_reports.extend(validate_kg_edges_schema(edges.limit(10), self.prefixes))
+        validation_reports.extend(validate_kg_edges_schema(self._edges.limit(10), self.prefixes))
 
         if validation_reports:
             return validation_reports
@@ -168,33 +173,33 @@ class ValidatorPolarsDataFrameImpl(Validator):
         # and if schema check is good, move on to data checks
         if not validation_reports:
             if limit:
-                edges = edges.limit(limit)
+                edges = self._edges.limit(limit)
 
-            column_names = edges.collect_schema().names()
+            column_names = self._edges.collect_schema().names()
             logger.debug(f"{column_names}")
             if self.config_contents and "edges_attribute_checks" in self.config_contents:
                 for check in self.config_contents["edges_attribute_checks"]["checks"]:
                     if "range" in check:
                         if check["range"]["column"] in column_names:
                             validation_reports.append(
-                                check_column_range(edges, check["range"]["column"], int(check["range"]["min"]),
+                                check_column_range(self._edges, check["range"]["column"], int(check["range"]["min"]),
                                                    int(check["range"]["max"]))
                             )
                     if "enum" in check:
                         if check["enum"]["column"] in column_names:
                             validation_reports.append(
-                                check_column_enum(edges, check["range"]["column"], list(check["range"]["values"])))
+                                check_column_enum(self._edges, check["range"]["column"], list(check["range"]["values"])))
 
-            validation_reports.extend(run_edge_checks(edges, self.prefixes))
+            validation_reports.extend(run_edge_checks(self._edges, self.prefixes))
 
         return validation_reports
 
-    def validate_nodes_and_edges(self, nodes_df: pl.DataFrame, edges_df: pl.DataFrame, limit: int | None = None):
+    def validate_nodes_and_edges(self, limit: int | None = None):
         """Validate a knowledge graph nodes vs edges."""
         logger.info("Validating nodes & edges")
         validation_reports = []
 
-        edges_df = edges_df.select([pl.col("subject"), pl.col("predicate"), pl.col("object")])
+        edges_df = self._edges.select([pl.col("subject"), pl.col("predicate"), pl.col("object")])
 
         unique_edge_ids = (
             pl.concat(
@@ -211,9 +216,9 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
         # If limit is specified, apply it to both nodes and edges
         if limit:
-            nodes_df = nodes_df.limit(limit)
+            self._nodes = self._nodes.limit(limit)
 
-        validation_reports.extend(analyze_edge_types(nodes_df, edges_df, unique_edge_ids))
+        validation_reports.extend(analyze_edge_types(self._nodes, edges_df, unique_edge_ids))
 
         return validation_reports
 
@@ -221,23 +226,23 @@ class ValidatorPolarsDataFrameImpl(Validator):
 class ValidatorPolarsFileImpl(Validator):
     """Polars-based validator implementation."""
 
-    def __init__(self, config=None):
+    def __init__(self, nodes_file_path, edges_file_path, config=None):
         """Create a new instance of the polars-based validator."""
-        super().__init__(config)
+        super().__init__(nodes_file_path, edges_file_path, config)
         # Set a default report directory if none is provided
 
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None) -> int:
+    def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
-        if nodes_file_path:
-            tmp_val_violations = self.validate_kg_nodes(nodes_file_path, limit)
+        if self._nodes:
+            tmp_val_violations = self.validate_kg_nodes(limit)
             validation_reports.extend(tmp_val_violations)
 
-        if edges_file_path:
-            validation_reports.extend(self.validate_kg_edges(edges_file_path, limit))
+        if self._edges:
+            validation_reports.extend(self.validate_kg_edges(limit))
 
-        if nodes_file_path and edges_file_path:
-            validation_reports.extend(self.validate_nodes_and_edges(nodes_file_path, edges_file_path, limit))
+        if self._nodes and self._edges:
+            validation_reports.extend(self.validate_nodes_and_edges(limit))
 
         # Write validation report
         self.write_output(validation_reports)
@@ -246,14 +251,14 @@ class ValidatorPolarsFileImpl(Validator):
             return 1
         return 0
 
-    def validate_kg_nodes(self, nodes, limit):
+    def validate_kg_nodes(self, limit):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(
+        schema_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(
             10).collect()
 
         validation_reports.extend(validate_kg_nodes_schema(schema_df, self.prefixes))
@@ -263,7 +268,7 @@ class ValidatorPolarsFileImpl(Validator):
 
         # and if schema check is good, move on to data checks
         if not validation_reports:
-            main_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
+            main_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
 
             if limit:
                 df = main_df.limit(limit).collect()
@@ -292,14 +297,14 @@ class ValidatorPolarsFileImpl(Validator):
 
         return validation_reports
 
-    def validate_kg_edges(self, edges, limit):
+    def validate_kg_edges(self, limit):
         """Validate a knowledge graph using optional edges TSV files."""
         logger.info("Validating edges TSV...")
 
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+        schema_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
 
         validation_reports.extend(validate_kg_edges_schema(schema_df, self.prefixes))
 
@@ -308,7 +313,7 @@ class ValidatorPolarsFileImpl(Validator):
 
         # and if schema check is good, move on to data checks
         if not validation_reports:
-            main_df = pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
+            main_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
 
             if limit:
                 df = main_df.limit(limit).collect()
@@ -335,14 +340,14 @@ class ValidatorPolarsFileImpl(Validator):
         return validation_reports
 
 
-    def validate_nodes_and_edges(self, nodes, edges, limit):
+    def validate_nodes_and_edges(self, limit):
         """Validate a knowledge graph nodes vs edges."""
         logger.info("Validating nodes & edges")
 
         validation_reports = []
 
         edges_df = (
-            pl.scan_csv(edges, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
+            pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
             .select([pl.col("subject"), pl.col("predicate"), pl.col("object")])
             .collect()
         )
@@ -360,7 +365,7 @@ class ValidatorPolarsFileImpl(Validator):
         logger.info("collecting counts")
 
         # Load node data
-        nodes_df = pl.scan_csv(nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
+        nodes_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=False, low_memory=True)
 
         # If limit is specified, apply it to both nodes and edges
         if limit:
@@ -530,8 +535,6 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
         )
 
     return validation_reports
-
-
 
 
 def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
