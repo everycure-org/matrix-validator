@@ -65,7 +65,7 @@ def polars(config, nodes, edges, limit, output_format):
     """
     exit_code = 0
     try:
-        validator = validator_polars.ValidatorPolarsImpl(config)
+        validator = validator_polars.ValidatorPolarsFileImpl(config)
         if output_format:
             validator.set_output_format(output_format)
         exit_code = validator.validate(nodes, edges, limit)
