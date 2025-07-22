@@ -65,10 +65,10 @@ def polars(config, nodes, edges, limit, output_format):
     """
     exit_code = 0
     try:
-        validator = validator_polars.ValidatorPolarsFileImpl(config)
+        validator = validator_polars.ValidatorPolarsFileImpl(nodes, edges, config)
         if output_format:
             validator.set_output_format(output_format)
-        exit_code = validator.validate(nodes, edges, limit)
+        exit_code = validator.validate(limit)
     except Exception as e:
         logger.exception(f"Error during validation: {e}")
         click.echo("Validation failed. See logs for details.", err=True)
