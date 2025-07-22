@@ -6,16 +6,20 @@ from abc import ABC, abstractmethod
 from importlib import resources as il_resources
 
 import tomllib
+from typing import Any
+
 from biolink_model import prefixmaps
 
 
 class Validator(ABC):
     """Abstract class for a validator."""
 
-    def __init__(self, config=None):
+    def __init__(self, nodes: Any, edges: Any, config=None):
         """Create a new instance of the validator."""
         self.output_format = "txt"
         self.config_contents = None
+        self._nodes = nodes
+        self._edges = edges
 
         tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
 
@@ -39,9 +43,9 @@ class Validator(ABC):
         }
 
     @abstractmethod
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None) -> int:
+    def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
-        return 0
+        ...
 
     def set_output_format(self, output_format):
         """Set the output format."""
