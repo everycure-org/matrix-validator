@@ -34,18 +34,18 @@ def format_schema_error(error: dict) -> str:
 class ValidatorPanderaImpl(Validator):
     """Pandera-based validator implementation."""
 
-    def __init__(self, config=None):
+    def __init__(self, nodes_file_path: str | None, edges_file_path: str | None, config=None):
         """Create a new instance of the pandera-based validator."""
-        super().__init__(config)
+        super().__init__(nodes=nodes_file_path, edges=edges_file_path, config=config)
 
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None) -> int:
+    def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         validation_reports = []
 
-        if nodes_file_path:
+        if self._nodes:
             try:
-                logging.warning(f"🔍 Validating Nodes TSV: {nodes_file_path}")
-                df_nodes = pl.read_csv(nodes_file_path, separator="\t", infer_schema_length=0)
+                logging.warning(f"🔍 Validating Nodes TSV: {self._nodes}")
+                df_nodes = pl.read_csv(self._nodes, separator="\t", infer_schema_length=0)
                 try:
                     MatrixNodeSchema.validate(df_nodes, lazy=True)
                     validation_reports.append("✅ **Nodes Validation Passed**")
@@ -56,10 +56,10 @@ class ValidatorPanderaImpl(Validator):
                 error_message = str(e)
                 validation_reports.append(f"❌ **Nodes Validation Failed**:\n No valid data frame could be loaded.\n{error_message}")
 
-        if edges_file_path:
+        if self._edges:
             try:
-                logging.warning(f"🔍 Validating edges TSV: {edges_file_path}")
-                df_edges = pl.read_csv(edges_file_path, separator="\t", infer_schema_length=0)
+                logging.warning(f"🔍 Validating edges TSV: {self._edges}")
+                df_edges = pl.read_csv(self._edges, separator="\t", infer_schema_length=0)
                 try:
                     MatrixEdgeSchema.validate(df_edges, lazy=True)
                     validation_reports.append("✅ **Edges Validation Passed**")
