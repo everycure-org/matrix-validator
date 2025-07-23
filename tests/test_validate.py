@@ -43,7 +43,7 @@ class TestValidate(unittest.TestCase):
         print(prefix_class_map)
 
     def test_validate_dataframe_impl(self):
-        """Test validation method from DataFrame implementation"""
+        """Test validation method from DataFrame implementation."""
         test_nodes = os.path.join("./data", "testdata_robokop-kg_nodes.tsv")
         nodes_df = pl.scan_csv(test_nodes, separator="\t", has_header=True, ignore_errors=True).limit(10).collect()
         test_edges = os.path.join("./data", "testdata_robokop-kg_edges.tsv")
