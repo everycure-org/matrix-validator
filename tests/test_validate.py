@@ -2,10 +2,10 @@
 
 import json
 import os.path
-import polars as pl
 import unittest
 from importlib import resources as il_resources
 
+import polars as pl
 from biolink_model import prefixmaps
 
 from matrix_validator.validator_polars import ValidatorPolarsDataFrameImpl
@@ -50,4 +50,4 @@ class TestValidate(unittest.TestCase):
         edges_df = pl.scan_csv(test_edges, separator="\t", has_header=True, ignore_errors=True).limit(10).collect()
         validator = ValidatorPolarsDataFrameImpl(nodes=nodes_df, edges=edges_df)
 
-        assert validator.validate() == 1
+        self.assertTrue(validator.validate() == 1)
