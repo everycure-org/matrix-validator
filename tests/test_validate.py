@@ -51,5 +51,3 @@ class TestValidate(unittest.TestCase):
         validator = ValidatorPolarsDataFrameImpl(nodes=nodes_df, edges=edges_df)
 
         assert validator.validate() == 1
-
-
