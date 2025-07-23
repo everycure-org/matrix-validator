@@ -3,6 +3,7 @@ TIMECMD= #/usr/bin/time -l
 VERBOSE=-vvv
 
 install:
+	poetry lock
 	poetry install
 
 prepare_tests:
