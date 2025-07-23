@@ -4,10 +4,9 @@ import json
 import sys
 from abc import ABC, abstractmethod
 from importlib import resources as il_resources
-
-import tomllib
 from typing import Any
 
+import tomllib
 from biolink_model import prefixmaps
 
 
@@ -56,7 +55,7 @@ class Validator(ABC):
         return self.output_format
 
     def write_output(self, validation_reports):
-        """Write the validation output"""
+        """Write the validation output."""
         match self.output_format:
             case "txt":
                 sys.stdout.write("\n".join(validation_reports))

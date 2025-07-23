@@ -94,12 +94,14 @@ def create_node_schema(prefixes: list[str]):
 
 
 class ValidatorPolarsDataFrameImpl(Validator):
+    """Polars-based validator implementation using Dataframes."""
 
     def __init__(self, nodes: pl.DataFrame, edges: pl.DataFrame, config=None):
         """Create a new instance of the polars-based validator."""
         super().__init__(nodes, edges, config)
 
     def validate(self, limit: int | None = None) -> int:
+        """Validate inputs."""
         validation_reports = []
 
         validation_reports.extend(self.validate_kg_nodes())
@@ -168,7 +170,7 @@ class ValidatorPolarsDataFrameImpl(Validator):
         # and if schema check is good, move on to data checks
         if not validation_reports:
             if limit:
-                edges = self._edges.limit(limit)
+                self.edges = self._edges.limit(limit)
 
             column_names = self._edges.collect_schema().names()
             logger.debug(f"{column_names}")
@@ -221,7 +223,7 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
 
 class ValidatorPolarsFileImpl(Validator):
-    """Polars-based validator implementation."""
+    """Polars-based validator implementation using files."""
 
     def __init__(self, nodes_file_path, edges_file_path, config=None):
         """Create a new instance of the polars-based validator."""
@@ -371,6 +373,7 @@ class ValidatorPolarsFileImpl(Validator):
 
 
 def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_edge_ids):
+    """Analyzing Edge types."""
     validation_reports = []
 
     # Check if all edge IDs exist in node IDs
@@ -579,6 +582,7 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
 
 
 def run_edge_checks(df: pl.DataFrame, prefixes: list):
+    """Run Edge Validation Checks using a Polars Dataframe."""
     usable_columns = [pl.col("subject"), pl.col("predicate"), pl.col("object"), pl.col("knowledge_level"), pl.col("agent_type")]
     edge_checks_df = df.select(usable_columns)
     validation_reports = []
