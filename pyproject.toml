@@ -58,6 +58,7 @@ lint.extend-ignore = [
     "D203",  # `blank-line-before-docstring`
     ]
 line-length = 140
+ignore = ["S101"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 lint.fixable = ["ALL"]
