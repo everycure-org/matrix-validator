@@ -13,6 +13,7 @@ packages = [
 python = "^3.11"
 click = "*"
 polars-lts-cpu = "^1.23.0"
+#pyspark = "3.5.1"
 importlib-metadata = ">=8.2.0"
 pandera = "^0.22.1"
 tqdm = "*"
@@ -57,6 +58,7 @@ lint.extend-ignore = [
     "D203",  # `blank-line-before-docstring`
     ]
 line-length = 140
+ignore = ["S101"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 lint.fixable = ["ALL"]

@@ -1,11 +1,14 @@
 """Test Validation."""
 
 import json
+import os.path
 import unittest
 from importlib import resources as il_resources
 
+import polars as pl
 from biolink_model import prefixmaps
 
+from matrix_validator.validator_polars import ValidatorPolarsDataFrameImpl
 from matrix_validator.validator_schema import ValidatorPanderaImpl
 
 
@@ -14,8 +17,8 @@ class TestValidate(unittest.TestCase):
 
     def test_version_type(self):
         """Test validation method."""
-        validator = ValidatorPanderaImpl(config="./config.toml")
-        validator.validate(nodes_file_path=None, edges_file_path=None)
+        validator = ValidatorPanderaImpl(None, None)
+        validator.validate(None)
 
     def test_biolink_prefix_class_mapping(self):
         """Test extraction of biolink preferred prefix per category mapping."""
@@ -38,3 +41,13 @@ class TestValidate(unittest.TestCase):
                 prefix_class_map[prefix].add(key)
 
         print(prefix_class_map)
+
+    def test_validate_dataframe_impl(self):
+        """Test validation method from DataFrame implementation."""
+        test_nodes = os.path.join("tests/data/testdata_robokop-kg_nodes.tsv")
+        nodes_df = pl.scan_csv(test_nodes, separator="\t", has_header=True, ignore_errors=True).limit(10).collect()
+        test_edges = os.path.join("tests/data/testdata_robokop-kg_edges.tsv")
+        edges_df = pl.scan_csv(test_edges, separator="\t", has_header=True, ignore_errors=True).limit(10).collect()
+        validator = ValidatorPolarsDataFrameImpl(nodes=nodes_df, edges=edges_df)
+
+        self.assertTrue(validator.validate() == 1)

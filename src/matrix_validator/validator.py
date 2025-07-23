@@ -1,9 +1,10 @@
 """Validator abstract class."""
 
 import json
-import os
+import sys
 from abc import ABC, abstractmethod
 from importlib import resources as il_resources
+from typing import Any
 
 import tomllib
 from biolink_model import prefixmaps
@@ -12,22 +13,25 @@ from biolink_model import prefixmaps
 class Validator(ABC):
     """Abstract class for a validator."""
 
-    def __init__(self, config=None):
+    def __init__(self, nodes: Any, edges: Any, config=None):
         """Create a new instance of the validator."""
-        self.report_dir = None
         self.output_format = "txt"
+        self.config_contents = None
+        self._nodes = nodes
+        self._edges = edges
 
         tmp_prefixes = list(json.loads(il_resources.files(prefixmaps).joinpath("biolink-model-prefix-map.json").read_text()).keys())
 
         # Handle the case when config is None or not provided
         if config is not None:
             with open(config, "rb") as config_file:
-                config_contents = tomllib.load(config_file)
-                self.config_contents = config_contents
+                self.config_contents = tomllib.load(config_file)
 
-            if config_contents["biolink"]["supplemental_prefixes"]:
-                supplemental_prefixes = list(config_contents["biolink"]["supplemental_prefixes"])
-                tmp_prefixes.extend(supplemental_prefixes)
+            if self.config_contents and "biolink" in self.config_contents:
+                biolink_config = self.config_contents["biolink"]
+                if "supplemental_prefixes" in biolink_config:
+                    supplemental_prefixes = list(biolink_config["supplemental_prefixes"])
+                    tmp_prefixes.extend(supplemental_prefixes)
 
         self.prefixes = list(set(tmp_prefixes))
 
@@ -38,23 +42,9 @@ class Validator(ABC):
         }
 
     @abstractmethod
-    def validate(self, nodes_file_path, edges_file_path, limit: int | None = None):
+    def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
-        pass
-
-    def is_set_report_dir(self):
-        """Check if the report directory is set."""
-        if self.get_report_dir():
-            return True
-        return False
-
-    def set_report_dir(self, report_dir):
-        """Set the report directory."""
-        self.report_dir = report_dir
-
-    def get_report_dir(self):
-        """Get the report directory."""
-        return self.report_dir
+        ...
 
     def set_output_format(self, output_format):
         """Set the output format."""
@@ -64,18 +54,12 @@ class Validator(ABC):
         """Get the output format."""
         return self.output_format
 
-    def get_report_file(self):
-        """Get the path to the report file."""
-        return os.path.join(self.report_dir, f"report.{self.output_format}")
-
-    def write_report(self, validation_reports):
-        """Write the validation report to a file."""
-        report_file = self.get_report_file()
-        with open(report_file, "w") as report:
-            match self.output_format:
-                case "txt":
-                    report.write("\n".join(validation_reports))
-                case "md":
-                    report.write("\n\n".join([f"## {line}" for line in validation_reports]))
-                case _:
-                    report.write("\n".join(validation_reports))
+    def write_output(self, validation_reports):
+        """Write the validation output."""
+        match self.output_format:
+            case "txt":
+                sys.stdout.write("\n".join(validation_reports))
+            case "md":
+                sys.stdout.write("\n\n".join([f"## {line}" for line in validation_reports]))
+            case _:
+                sys.stdout.write("\n".join(validation_reports))
