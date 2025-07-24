@@ -132,7 +132,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
         # and if schema check is good, move on to data checks
         if not validation_reports:
-
             if limit:
                 self._nodes = self._nodes.limit(limit)
 
