@@ -300,7 +300,7 @@ class ValidatorPolarsFileImpl(Validator):
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+        schema_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0).limit(10).collect()
 
         validation_reports.extend(validate_kg_edges_schema(schema_df, self.prefixes))
 
@@ -567,8 +567,7 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
         if counts_df.get_column("invalid_delimited_by_pipes_category_count").item(0) > 0:
             validation_reports.append(check_column_is_delimited_by_pipes(node_check_df, "category"))
 
-        for violation in check_node_id_and_category_with_biolink_preferred_prefixes(class_prefix_map, node_check_df):
-            validation_reports.append(violation)
+        validation_reports.append(check_node_id_and_category_with_biolink_preferred_prefixes(class_prefix_map, node_check_df))
 
         logger.debug(f"number of total violations: {len(validation_reports)}")
 
