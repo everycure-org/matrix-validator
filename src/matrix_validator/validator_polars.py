@@ -115,6 +115,7 @@ class ValidatorPolarsDataFrameImpl(Validator):
         return 0
 
     def violations(self):
+        """Get the violations."""
         return self.violations
 
     def validate_kg_nodes(self, limit: int | None = None):
