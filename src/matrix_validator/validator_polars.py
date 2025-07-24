@@ -114,7 +114,7 @@ class ValidatorPolarsDataFrameImpl(Validator):
             return 1
         return 0
 
-    def violations(self):
+    def violations(self) -> list:
         """Get the violations."""
         return self.violations
 
