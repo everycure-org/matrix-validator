@@ -103,7 +103,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
     def validate(self, limit: int | None = None) -> int:
         """Validate inputs."""
-
         self._violations.extend(self.validate_kg_nodes())
 
         self._violations.extend(self.validate_kg_edges())
