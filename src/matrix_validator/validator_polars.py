@@ -99,23 +99,23 @@ class ValidatorPolarsDataFrameImpl(Validator):
     def __init__(self, nodes: pl.DataFrame, edges: pl.DataFrame, config=None):
         """Create a new instance of the polars-based validator."""
         super().__init__(nodes, edges, config)
+        self.violations = []
 
     def validate(self, limit: int | None = None) -> int:
         """Validate inputs."""
-        validation_reports = []
 
-        validation_reports.extend(self.validate_kg_nodes())
+        self.violations.extend(self.validate_kg_nodes())
 
-        validation_reports.extend(self.validate_kg_edges())
+        self.violations.extend(self.validate_kg_edges())
 
-        validation_reports.extend(self.validate_nodes_and_edges())
+        self.violations.extend(self.validate_nodes_and_edges())
 
-        # Write validation report
-        self.write_output(validation_reports)
-
-        if len(validation_reports) > 0:
+        if len(self.violations) > 0:
             return 1
         return 0
+
+    def violations(self):
+        return self.violations
 
     def validate_kg_nodes(self, limit: int | None = None):
         """Validate a knowledge graph using optional nodes TSV files."""
