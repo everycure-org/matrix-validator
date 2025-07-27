@@ -28,12 +28,12 @@ def validate(df: DataFrame, column, values: list):
 
     # Create a summary report
     report = {
-        "total_violations": total_violations,
-        "unique_violations": len(unique_violations),
-        "examples": examples,
+        "error": {
+            "check": f"invalid_column_enum_{column}_summary",
+            "total_violations": total_violations,
+            "unique_violations": len(unique_violations),
+            "examples": examples,
+        }
     }
 
-    # Format output as a single JSON string
-    result = {f"invalid_column_enum_{column}_summary": report}
-
-    return json.dumps(result, indent=2)
+    return json.dumps(report, indent=2)

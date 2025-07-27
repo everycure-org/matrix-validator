@@ -39,9 +39,12 @@ def validate(df, edge_ids: list, column: str):
     )
 
     # Create a summary report
-    report = {"total_violations": total_violations, "prefix_violations": prefix_counts.to_dicts()}
 
     # Format output as a single JSON string
-    result = {"invalid_edge_ids_in_node_ids_summary": report}
+    result = {
+        "error": {
+            "invalid_edge_ids_in_node_ids_summary": {"total_violations": total_violations, "prefix_violations": prefix_counts.to_dicts()}
+        }
+    }
 
-    return json.dumps(result, indent=2)
+    return json.dumps(result)

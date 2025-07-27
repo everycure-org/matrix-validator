@@ -33,4 +33,4 @@ def validate(df, column):
     # Format output as a single JSON string
     result = {f"invalid_curie_{column}_summary": report}
 
-    return json.dumps(result, indent=2)
+    return json.dumps(result)

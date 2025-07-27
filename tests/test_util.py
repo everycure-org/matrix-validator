@@ -1,5 +1,6 @@
 """Test utility functions."""
 
+import json
 import unittest
 from unittest import mock
 
@@ -221,3 +222,22 @@ class TestUtilFunctions(unittest.TestCase):
             for check in config_contents["nodes_attribute_checks"]["checks"]:
                 if "range" in check:
                     print(check["range"]["column"])
+
+    def test_scratch(self):
+        """Test toml config."""
+
+        def serialize_sets(obj):
+            if isinstance(obj, set):
+                return list(obj)
+
+            return obj
+
+        violations = {
+            "The prefixes 'NCBITaxon,NCBIGene' are not within the Biolink preferred category mapping of 'biolink:Protein'",
+            "The prefixes 'NCBIGene,UniProtKB' are not within the Biolink preferred category mapping of 'biolink:OrganismTaxon'",
+            "The prefixes 'NCBITaxon,UniProtKB' are not within the Biolink preferred category mapping of 'biolink:Gene'",
+        }
+        violation_summary = {"check": "node_id_and_category_with_biolink_preferred_prefixes", "violations": violations}
+
+        # values = set(["NCBITaxon", "UniProtKB"])
+        print(json.dumps(violation_summary, default=serialize_sets))

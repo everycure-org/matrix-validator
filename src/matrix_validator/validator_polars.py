@@ -36,6 +36,8 @@ from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_p
 )
 from matrix_validator.validator import Validator
 
+from . import serialize_sets
+
 logger = logging.getLogger("matrix-validator.polars")
 
 BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
@@ -300,7 +302,11 @@ class ValidatorPolarsFileImpl(Validator):
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0).limit(10).collect()
+        schema_df = (
+            pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0)
+            .limit(10)
+            .collect()
+        )
 
         validation_reports.extend(validate_kg_edges_schema(schema_df, self.prefixes))
 
@@ -418,14 +424,16 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
 
         # Create a JSON report for edge type analysis
         edge_type_summary = {
-            "edge_type_analysis": {
-                "total_edges": total_count,
-                "valid_edges": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
-                "invalid_edges": {"count": invalid_count, "percent": round(invalid_percent, 2), "unique_types": unique_invalid_types},
+            "info": {
+                "edge_type_analysis": {
+                    "total_edges": total_count,
+                    "valid_edges": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
+                    "invalid_edges": {"count": invalid_count, "percent": round(invalid_percent, 2), "unique_types": unique_invalid_types},
+                }
             }
         }
 
-        validation_reports.append(json.dumps(edge_type_summary, indent=2))
+        validation_reports.append(json.dumps(edge_type_summary))
 
         # Add more detailed report about invalid edge types if there are any
         if invalid_count > 0:
@@ -441,23 +449,27 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
 
             # Build a dictionary for invalid edge types
             invalid_edge_types_dict = {
-                "warning": f"{invalid_count} edges ({invalid_percent:.2f}%) have invalid edge types according to the biolink model.",
-                "valid": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
-                "invalid": {
-                    "count": invalid_count,
-                    "percent": round(invalid_percent, 2),
-                    "unique_types": unique_invalid_types,
-                    "top_invalid_edge_types": invalid_types_report,
-                },
+                "error": {
+                    "message": f"{invalid_count} edges ({invalid_percent:.2f}%) have invalid edge types according to the biolink model.",
+                    "valid": {"count": valid_count, "percent": round(valid_percent, 2), "unique_types": unique_valid_types},
+                    "invalid": {
+                        "count": invalid_count,
+                        "percent": round(invalid_percent, 2),
+                        "unique_types": unique_invalid_types,
+                        "top_invalid_edge_types": invalid_types_report,
+                    },
+                }
             }
-            validation_reports.append(json.dumps(invalid_edge_types_dict, indent=2))
+            validation_reports.append(json.dumps(invalid_edge_types_dict))
             logger.info("Added invalid edge types warning to validation report")
         else:
-            success_message = (
-                f"All {total_count} edges have valid edge types according to the biolink model.\n"
-                f"Number of unique valid edge types: {unique_valid_types}"
-            )
-            validation_reports.append(success_message)
+            success_message = {
+                "info": {
+                    "message": f"All {total_count} edges have valid edge types according to the biolink model."
+                    f"Number of unique valid edge types: {unique_valid_types}"
+                }
+            }
+            validation_reports.append(json.dumps(success_message))
             logger.info(success_message)
 
     except Exception as e:
@@ -472,27 +484,41 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
     """Validate a KG from a Polars Dataframe."""
     validation_reports = []
 
-    superfluous_columns = []
-
     node_schema = create_node_schema(prefixes)
 
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=False)
     except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns = []
         superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+        violation = {
+            "warning": {
+                "source": "nodes",
+                "check": "superfluous_columns_not_recognized_by_biolink_model",
+                "columns": f"{','.join(superfluous_columns)}",
+            }
+        }
+        validation_reports.append(json.dumps(violation))
 
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
-        logger.warning(f"number of schema violations: {len(ex.errors())}")
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
+        columns_by_error_type_map = {}
+        for e in ex.errors():
+            type = e["type"].removeprefix("value_error.")
+            column = _display_error_loc(e)
 
-    if superfluous_columns:
-        logger.warning(
-            "The following columns are not recognised by the biolink model. "
-            + "This is not an error but consider suggesting these to be added to "
-            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
-        )
+            if type not in columns_by_error_type_map:
+                columns_by_error_type_map[type] = set()
+
+            if column not in columns_by_error_type_map[type]:
+                columns_by_error_type_map[type].add(column)
+
+        if columns_by_error_type_map:
+            for key, value in columns_by_error_type_map.items():
+                violation = {"error": {"source": "nodes", "check": "schema_validation", "type": key, "column": value}}
+                validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
 
@@ -503,26 +529,41 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
 
     schema_df = df.limit(10)
 
-    superfluous_columns = []
-
     edge_schema = create_edge_schema(prefixes)
 
     try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
     except pt.exceptions.DataFrameValidationError as ex:
+        superfluous_columns = []
         superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
+        violation = {
+            "warning": {
+                "source": "edges",
+                "check": "superfluous_columns_not_recognized_by_biolink_model",
+                "columns": f"{','.join(superfluous_columns)}",
+            }
+        }
+        validation_reports.append(json.dumps(violation))
 
     try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
-        validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
+        # validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
+        columns_by_error_type_map = {}
+        for e in ex.errors():
+            type = e["type"].removeprefix("value_error.")
+            column = _display_error_loc(e)
 
-    if superfluous_columns:
-        logger.warning(
-            "The following columns are not recognised by the biolink model. "
-            + "This is not an error but consider suggesting these to be added to "
-            + f"biolink at https://github.com/biolink/biolink-model/issues.: {','.join(superfluous_columns)}"
-        )
+            if type not in columns_by_error_type_map:
+                columns_by_error_type_map[type] = set()
+
+            if column not in columns_by_error_type_map[type]:
+                columns_by_error_type_map[type].add(column)
+
+        if columns_by_error_type_map:
+            for key, value in columns_by_error_type_map.items():
+                violation = {"error": {"source": "edges", "check": "schema_validation", "type": key, "column": value}}
+                validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
 

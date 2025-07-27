@@ -1,5 +1,8 @@
 """Polars-based validator check."""
+
 import json
+
+from .. import serialize_sets
 
 
 def validate(class_prefix_map, df):
@@ -29,17 +32,7 @@ def validate(class_prefix_map, df):
         violation_str = f"The prefixes '{value_str}' are not within the Biolink preferred category mapping of '{key}'"
         violations.add(violation_str)
 
-    violation_summary = {
-        "check": "node_id_and_category_with_biolink_preferred_prefixes",
-        "violations": violations
-    }
-
-    return json.dumps(violation_summary, indent=2, default=serialize_sets)
-
-
-def serialize_sets(obj):
-    if isinstance(obj, set):
-        return list(obj)
-
-    return obj
-
+    if violations:
+        violation_summary = {"error": {"check": "node_id_and_category_with_biolink_preferred_prefixes", "violations": violations}}
+        return json.dumps(violation_summary, default=serialize_sets)
+    return ""
