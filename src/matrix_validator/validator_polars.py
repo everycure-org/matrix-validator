@@ -465,7 +465,8 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
         else:
             success_message = {
                 "info": {
-                    "message": f"All {total_count} edges have valid edge types according to the biolink model.  Number of unique valid edge types: {unique_valid_types}"
+                    "message": f"All {total_count} edges have valid edge types according to the biolink model."
+                               f"Number of unique valid edge types: {unique_valid_types}"
                 }
             }
             validation_reports.append(json.dumps(success_message))
