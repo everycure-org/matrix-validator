@@ -43,10 +43,7 @@ def validate(df, edge_ids: list, column: str):
     # Format output as a single JSON string
     result = {
         "error": {
-            "invalid_edge_ids_in_node_ids_summary": {
-                "total_violations": total_violations,
-                "prefix_violations": prefix_counts.to_dicts()
-            }
+            "invalid_edge_ids_in_node_ids_summary": {"total_violations": total_violations, "prefix_violations": prefix_counts.to_dicts()}
         }
     }
 

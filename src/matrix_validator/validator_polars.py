@@ -301,7 +301,11 @@ class ValidatorPolarsFileImpl(Validator):
         validation_reports = []
 
         # do an initial schema check
-        schema_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0).limit(10).collect()
+        schema_df = (
+            pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0)
+            .limit(10)
+            .collect()
+        )
 
         validation_reports.extend(validate_kg_edges_schema(schema_df, self.prefixes))
 
@@ -489,7 +493,7 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
             "warning": {
                 "source": "nodes",
                 "check": "superfluous_columns_not_recognized_by_biolink_model",
-                "columns": f"{','.join(superfluous_columns)}"
+                "columns": f"{','.join(superfluous_columns)}",
             }
         }
         validation_reports.append(json.dumps(violation))
@@ -500,7 +504,7 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
         validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
         columns_by_error_type_map = {}
         for e in ex.errors():
-            type = e['type'].removeprefix("value_error.")
+            type = e["type"].removeprefix("value_error.")
             column = _display_error_loc(e)
 
             if type not in columns_by_error_type_map:
@@ -511,16 +515,8 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
 
         if columns_by_error_type_map:
             for key, value in columns_by_error_type_map.items():
-                violation = {
-                    "error": {
-                        "source": "nodes",
-                        "check": f"schema_validation",
-                        "type": key,
-                        "column": value
-                    }
-                }
+                violation = {"error": {"source": "nodes", "check": f"schema_validation", "type": key, "column": value}}
                 validation_reports.append(json.dumps(violation, default=serialize_sets))
-
 
     return validation_reports
 
@@ -542,7 +538,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
             "warning": {
                 "source": "edges",
                 "check": "superfluous_columns_not_recognized_by_biolink_model",
-                "columns": f"{','.join(superfluous_columns)}"
+                "columns": f"{','.join(superfluous_columns)}",
             }
         }
         validation_reports.append(json.dumps(violation))
@@ -553,7 +549,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
         # validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
         columns_by_error_type_map = {}
         for e in ex.errors():
-            type = e['type'].removeprefix("value_error.")
+            type = e["type"].removeprefix("value_error.")
             column = _display_error_loc(e)
 
             if type not in columns_by_error_type_map:
@@ -564,14 +560,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
 
         if columns_by_error_type_map:
             for key, value in columns_by_error_type_map.items():
-                violation = {
-                    "error": {
-                        "source": "edges",
-                        "check": f"schema_validation",
-                        "type": key,
-                        "column": value
-                    }
-                }
+                violation = {"error": {"source": "edges", "check": f"schema_validation", "type": key, "column": value}}
                 validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
