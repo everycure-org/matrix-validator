@@ -8,7 +8,7 @@ from importlib import resources as il_resources
 import polars as pl
 from biolink_model import prefixmaps
 
-from matrix_validator.validator_polars import ValidatorPolarsDataFrameImpl
+from matrix_validator.validator_polars import ValidatorPolarsDataFrameImpl, ValidatorPolarsFileImpl
 from matrix_validator.validator_schema import ValidatorPanderaImpl
 
 
@@ -49,5 +49,18 @@ class TestValidate(unittest.TestCase):
         test_edges = os.path.join("tests/data/testdata_robokop-kg_edges.tsv")
         edges_df = pl.scan_csv(test_edges, separator="\t", has_header=True, ignore_errors=True).limit(10).collect()
         validator = ValidatorPolarsDataFrameImpl(nodes=nodes_df, edges=edges_df)
+        ret = validator.validate()
+        print("\n".join(validator.violations))
+
+        self.assertTrue(ret == 1)
+
+    def test_validate_files_impl(self):
+        """Test validation method from DataFrame implementation."""
+        # matrix_data_dir = ""
+        # test_nodes = os.path.join(dir, "data/test/raw/KGs/robokop-kg/30fd1bfc18cd5ccb/robokop-30fd1bfc18cd5ccb_nodes.tsv")
+        # test_edges = os.path.join(dir, "data/test/raw/KGs/robokop-kg/30fd1bfc18cd5ccb/robokop-30fd1bfc18cd5ccb_edges.tsv")
+        test_nodes = os.path.join("tests/data/testdata_robokop-kg_nodes.tsv")
+        test_edges = os.path.join("tests/data/testdata_robokop-kg_edges.tsv")
+        validator = ValidatorPolarsFileImpl(nodes_file_path=test_nodes, edges_file_path=test_edges)
 
         self.assertTrue(validator.validate() == 1)
