@@ -37,4 +37,4 @@ def validate(df: DataFrame, column, bm_agent_types: list):
     # Format output as a single JSON string
     result = {f"invalid_contains_biolink_model_agent_type_{column}_summary": report}
 
-    return json.dumps(result, indent=2)
+    return json.dumps(result)

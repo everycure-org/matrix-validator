@@ -39,4 +39,4 @@ def validate(df, column, bm_prefixes: list):
     # Format output as a single JSON string
     result = {f"invalid_contains_biolink_model_prefix_{column}_summary": report}
 
-    return json.dumps(result, indent=2)
+    return json.dumps(result)
