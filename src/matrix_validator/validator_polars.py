@@ -515,7 +515,7 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
 
         if columns_by_error_type_map:
             for key, value in columns_by_error_type_map.items():
-                violation = {"error": {"source": "nodes", "check": f"schema_validation", "type": key, "column": value}}
+                violation = {"error": {"source": "nodes", "check": "schema_validation", "type": key, "column": value}}
                 validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
@@ -560,7 +560,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
 
         if columns_by_error_type_map:
             for key, value in columns_by_error_type_map.items():
-                violation = {"error": {"source": "edges", "check": f"schema_validation", "type": key, "column": value}}
+                violation = {"error": {"source": "edges", "check": "schema_validation", "type": key, "column": value}}
                 validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
