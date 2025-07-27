@@ -9,19 +9,12 @@ import polars as pl
 from patito.exceptions import _display_error_loc
 
 from matrix_validator import util
-from matrix_validator.checks import (
-    CURIE_REGEX,
-    DELIMITED_BY_PIPES,
-    NO_LEADING_WHITESPACE,
-    NO_TRAILING_WHITESPACE,
-    STARTS_WITH_BIOLINK_REGEX,
-)
-from matrix_validator.checks.check_column_contains_biolink_model_agent_type import (
-    validate as check_column_contains_biolink_model_agent_type,
-)
-from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import (
-    validate as check_column_contains_biolink_model_knowledge_level,
-)
+from matrix_validator.checks import (CURIE_REGEX, DELIMITED_BY_PIPES, NO_LEADING_WHITESPACE, NO_TRAILING_WHITESPACE,
+                                     STARTS_WITH_BIOLINK_REGEX)
+from matrix_validator.checks.check_column_contains_biolink_model_agent_type import \
+    validate as check_column_contains_biolink_model_agent_type
+from matrix_validator.checks.check_column_contains_biolink_model_knowledge_level import \
+    validate as check_column_contains_biolink_model_knowledge_level
 from matrix_validator.checks.check_column_contains_biolink_model_prefix import validate as check_column_contains_biolink_model_prefix
 from matrix_validator.checks.check_column_enum import validate as check_column_enum
 from matrix_validator.checks.check_column_is_delimited_by_pipes import validate as check_column_is_delimited_by_pipes
@@ -31,10 +24,10 @@ from matrix_validator.checks.check_column_no_trailing_whitespace import validate
 from matrix_validator.checks.check_column_range import validate as check_column_range
 from matrix_validator.checks.check_column_starts_with_biolink import validate as check_column_starts_with_biolink
 from matrix_validator.checks.check_edge_ids_in_node_ids import validate as check_edge_ids_in_node_ids
-from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import (
-    validate as check_node_id_and_category_with_biolink_preferred_prefixes,
-)
+from matrix_validator.checks.check_node_id_and_category_with_biolink_preferred_prefixes import \
+    validate as check_node_id_and_category_with_biolink_preferred_prefixes
 from matrix_validator.validator import Validator
+
 from . import serialize_sets
 
 logger = logging.getLogger("matrix-validator.polars")

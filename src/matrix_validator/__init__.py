@@ -10,6 +10,7 @@ except importlib_metadata.PackageNotFoundError:
 
 
 def serialize_sets(obj):
+    """Serialize sets for json."""
     if isinstance(obj, set):
         return list(obj)
     return obj
