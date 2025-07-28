@@ -323,6 +323,7 @@ class ValidatorPolarsFileImpl(Validator):
 
 
 def run_config_range_checks(df: pl.DataFrame, config_contents):
+    """Run the config range checks for both nodes or edges."""
     validation_reports = []
     column_names = df.collect_schema().names()
     logger.debug(f"{column_names}")
