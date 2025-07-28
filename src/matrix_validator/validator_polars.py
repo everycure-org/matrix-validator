@@ -503,7 +503,6 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
-        validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
         columns_by_error_type_map = {}
         for e in ex.errors():
             type = e["type"].removeprefix("value_error.")
