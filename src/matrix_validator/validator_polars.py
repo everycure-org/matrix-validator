@@ -155,9 +155,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
         if limit:
             self._nodes = self._nodes.limit(limit)
 
-        column_names = self._nodes.collect_schema().names()
-        logger.debug(f"{column_names}")
-
         validation_reports.extend(run_config_range_checks(self._nodes, self.config_contents))
         validation_reports.extend(run_node_checks(self._nodes, self.prefixes, self.class_prefix_map))
 
@@ -171,9 +168,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
         if limit:
             self.edges = self._edges.limit(limit)
-
-        column_names = self._edges.collect_schema().names()
-        logger.debug(f"{column_names}")
 
         validation_reports.extend(run_config_range_checks(self._edges, self.config_contents))
         validation_reports.extend(run_edge_checks(self._edges, self.prefixes))
@@ -269,9 +263,6 @@ class ValidatorPolarsFileImpl(Validator):
 
         validation_reports.extend(check_for_superfluous_columns("nodes", nodes_schema, df))
 
-        column_names = df.collect_schema().names()
-        logger.debug(f"{column_names}")
-
         validation_reports.extend(run_config_range_checks(df, self.config_contents))
         validation_reports.extend(run_node_checks(df, self.prefixes, self.class_prefix_map))
 
@@ -289,9 +280,6 @@ class ValidatorPolarsFileImpl(Validator):
             df = main_df.limit(limit).collect()
         else:
             df = main_df.collect()
-
-        column_names = df.collect_schema().names()
-        logger.debug(f"{column_names}")
 
         validation_reports.extend(run_config_range_checks(df, self.config_contents))
         validation_reports.extend(run_edge_checks(df, self.prefixes))
@@ -339,6 +327,9 @@ class ValidatorPolarsFileImpl(Validator):
 
 def run_config_range_checks(df: pl.DataFrame, config_contents):
     validation_reports = []
+    column_names = df.collect_schema().names()
+    logger.debug(f"{column_names}")
+
     if config_contents:
         if "nodes_attribute_checks" in config_contents:
             for check in config_contents["nodes_attribute_checks"]["checks"]:
