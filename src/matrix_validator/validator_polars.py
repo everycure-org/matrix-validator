@@ -336,6 +336,7 @@ class ValidatorPolarsFileImpl(Validator):
 
         return validation_reports
 
+
 def run_config_range_checks(df: pl.DataFrame, config_contents):
     validation_reports = []
     if config_contents:
@@ -364,6 +365,7 @@ def run_config_range_checks(df: pl.DataFrame, config_contents):
                         validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
 
     return validation_reports
+
 
 def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_edge_ids):
     """Analyzing Edge types."""
@@ -466,6 +468,7 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
 
     return validation_reports
 
+
 def check_for_superfluous_columns(source: str, schema: pt.Model, df: pl.DataFrame):
     """Find superfluous columns in a KG from a Polars Dataframe."""
     validation_reports = []
@@ -484,6 +487,7 @@ def check_for_superfluous_columns(source: str, schema: pt.Model, df: pl.DataFram
             }
             validation_reports.append(json.dumps(violation))
     return validation_reports
+
 
 def check_schema(source: str, schema: pt.Model, df: pl.DataFrame):
     """Validate a KG from a Polars Dataframe."""

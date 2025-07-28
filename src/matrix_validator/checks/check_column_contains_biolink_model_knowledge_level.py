@@ -34,10 +34,6 @@ def validate(df, column, bm_knowledge_levels: list):
     }
 
     # Format output as a single JSON string
-    result = {
-        "error": {
-            f"invalid_contains_biolink_model_knowledge_level_{column}_summary": report
-        }
-    }
+    result = {"error": {f"invalid_contains_biolink_model_knowledge_level_{column}_summary": report}}
 
     return json.dumps(result)

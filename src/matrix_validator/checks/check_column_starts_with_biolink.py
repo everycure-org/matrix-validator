@@ -31,10 +31,6 @@ def validate(df, column):
     report = {"total_violations": total_violations, "unique_violations": len(unique_violations), "examples": examples}
 
     # Format output as a single JSON string
-    result = {
-        "error": {
-            f"invalid_starts_with_biolink_{column}_summary": report
-        }
-    }
+    result = {"error": {f"invalid_starts_with_biolink_{column}_summary": report}}
 
     return json.dumps(result)
