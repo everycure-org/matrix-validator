@@ -31,6 +31,10 @@ def validate(df, column):
     report = {"total_violations": total_violations, "unique_violations": len(unique_violations), "examples": examples}
 
     # Format output as a single JSON string
-    result = {f"invalid_delimited_by_pipes_{column}_summary": report}
+    result = {
+        "error": {
+            f"invalid_delimited_by_pipes_{column}_summary": report
+        }
+    }
 
     return json.dumps(result)
