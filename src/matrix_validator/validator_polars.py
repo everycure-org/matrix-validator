@@ -491,14 +491,15 @@ def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
     except pt.exceptions.DataFrameValidationError as ex:
         superfluous_columns = []
         superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
-        violation = {
-            "warning": {
-                "source": "nodes",
-                "check": "superfluous_columns_not_recognized_by_biolink_model",
-                "columns": f"{','.join(superfluous_columns)}",
+        if superfluous_columns:
+            violation = {
+                "warning": {
+                    "source": "nodes",
+                    "check": "superfluous_columns_not_recognized_by_biolink_model",
+                    "columns": f"{','.join(superfluous_columns)}",
+                }
             }
-        }
-        validation_reports.append(json.dumps(violation))
+            validation_reports.append(json.dumps(violation))
 
     try:
         node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=True)
@@ -535,14 +536,15 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
     except pt.exceptions.DataFrameValidationError as ex:
         superfluous_columns = []
         superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
-        violation = {
-            "warning": {
-                "source": "edges",
-                "check": "superfluous_columns_not_recognized_by_biolink_model",
-                "columns": f"{','.join(superfluous_columns)}",
+        if superfluous_columns:
+            violation = {
+                "warning": {
+                    "source": "edges",
+                    "check": "superfluous_columns_not_recognized_by_biolink_model",
+                    "columns": f"{','.join(superfluous_columns)}",
+                }
             }
-        }
-        validation_reports.append(json.dumps(violation))
+            validation_reports.append(json.dumps(violation))
 
     try:
         edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
