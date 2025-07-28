@@ -37,6 +37,6 @@ def validate(df, column, bm_prefixes: list):
     report = {"total_violations": total_violations, "prefix_violations": prefix_counts.to_dicts()}
 
     # Format output as a single JSON string
-    result = {f"invalid_contains_biolink_model_prefix_{column}_summary": report}
+    result = {"error": {f"invalid_contains_biolink_model_prefix_{column}_summary": report}}
 
     return json.dumps(result)

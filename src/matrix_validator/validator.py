@@ -16,7 +16,7 @@ class Validator(ABC):
     def __init__(self, nodes: Any, edges: Any, config=None):
         """Create a new instance of the validator."""
         self.output_format = "txt"
-        self.config_contents = None
+        self._config_contents = None
         self._nodes = nodes
         self._edges = edges
 
@@ -25,18 +25,18 @@ class Validator(ABC):
         # Handle the case when config is None or not provided
         if config is not None:
             with open(config, "rb") as config_file:
-                self.config_contents = tomllib.load(config_file)
+                self._config_contents = tomllib.load(config_file)
 
-            if self.config_contents and "biolink" in self.config_contents:
-                biolink_config = self.config_contents["biolink"]
+            if self._config_contents and "biolink" in self._config_contents:
+                biolink_config = self._config_contents["biolink"]
                 if "supplemental_prefixes" in biolink_config:
                     supplemental_prefixes = list(biolink_config["supplemental_prefixes"])
                     tmp_prefixes.extend(supplemental_prefixes)
 
-        self.prefixes = list(set(tmp_prefixes))
+        self._prefixes = list(set(tmp_prefixes))
 
         preferred_prefixes_per_class = json.loads(il_resources.files(prefixmaps).joinpath("preferred_prefixes_per_class.json").read_text())
-        self.class_prefix_map = {
+        self._class_prefix_map = {
             item["class_name"]: [prefix["prefix"] for prefix in item["prefix_map"]]
             for item in preferred_prefixes_per_class["biolink_class_prefixes"]
         }
@@ -45,6 +45,21 @@ class Validator(ABC):
     def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
         ...
+
+    @property
+    def config_contents(self):
+        """Get/Set config_contents accessor."""
+        return self._config_contents
+
+    @property
+    def prefixes(self):
+        """Get/Set prefixes accessor."""
+        return self._prefixes
+
+    @property
+    def class_prefix_map(self):
+        """Get/Set class_prefix_map accessor."""
+        return self._class_prefix_map
 
     def set_output_format(self, output_format):
         """Set the output format."""

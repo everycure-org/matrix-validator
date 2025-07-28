@@ -44,17 +44,22 @@ BIOLINK_KNOWLEDGE_LEVEL_KEYS = util.get_biolink_model_knowledge_level_keys()
 BIOLINK_AGENT_TYPE_KEYS = util.get_biolink_model_agent_type_keys()
 
 
-def create_edge_schema(prefixes: list[str]):
+def create_edges_schema(prefixes: list[str]):
     """Create a EdgeSchema with a dynamic list of allowed prefixes."""
 
     class EdgeSchema(pt.Model):
         """EdgeSchema derived from Patito."""
 
-        subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
-        predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
-        object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
-        knowledge_level: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
-        agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
+        # subject: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        # predicate: str = pt.Field(constraints=[pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX)])
+        # object: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        # knowledge_level: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_KNOWLEDGE_LEVEL_KEYS)])
+        # agent_type: str = pt.Field(constraints=[pt.field.str.contains_any(BIOLINK_AGENT_TYPE_KEYS)])
+        subject: str
+        predicate: str
+        object: str
+        knowledge_level: str
+        agent_type: str
         primary_knowledge_source: str
         aggregator_knowledge_source: str
         original_subject: str
@@ -69,21 +74,23 @@ def create_edge_schema(prefixes: list[str]):
     return EdgeSchema
 
 
-def create_node_schema(prefixes: list[str]):
+def create_nodes_schema(prefixes: list[str]):
     """Create a NodeSchema with a dynamic list of allowed prefixes."""
 
     class NodeSchema(pt.Model):
         """NodeSchema derived from Patito."""
 
-        id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
-        category: str = pt.Field(
-            constraints=[
-                pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
-                pt.field.str.contains(DELIMITED_BY_PIPES),
-                pt.field.str.contains(NO_LEADING_WHITESPACE),
-                pt.field.str.contains(NO_TRAILING_WHITESPACE),
-            ]
-        )
+        # id: str = pt.Field(constraints=[pt.field.str.contains(CURIE_REGEX), pt.field.str.contains_any(prefixes)])
+        # category: str = pt.Field(
+        #     constraints=[
+        #         pt.field.str.contains(STARTS_WITH_BIOLINK_REGEX),
+        #         pt.field.str.contains(DELIMITED_BY_PIPES),
+        #         pt.field.str.contains(NO_LEADING_WHITESPACE),
+        #         pt.field.str.contains(NO_TRAILING_WHITESPACE),
+        #     ]
+        # )
+        id: str
+        category: str
         name: Optional[str]
         description: Optional[str]
         equivalent_identifiers: Optional[str]
@@ -105,11 +112,29 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
     def validate(self, limit: int | None = None) -> int:
         """Validate inputs."""
-        self._violations.extend(self.validate_kg_nodes())
+        # do an initial schema check on nodes
+        nodes_schema = create_nodes_schema(self.prefixes)
+        nodes_violations = check_schema("nodes", nodes_schema, self._nodes.limit(10))
+        self._violations.extend(nodes_violations)
+        self._violations.extend(check_for_superfluous_columns("nodes", nodes_schema, self._nodes.limit(10)))
 
-        self._violations.extend(self.validate_kg_edges())
+        # do an initial schema check on edges
+        edges_schema = create_edges_schema(self.prefixes)
+        edges_violations = check_schema("edges", edges_schema, self._edges.limit(10))
+        self._violations.extend(edges_violations)
+        self._violations.extend(check_for_superfluous_columns("edges", edges_schema, self._edges.limit(10)))
 
-        self._violations.extend(self.validate_nodes_and_edges())
+        # control flow here is if the above schema checks have violations (missing columns),
+        # then the below checks will also fail due to run time errors instead of validation errors
+
+        if not nodes_violations:
+            self._violations.extend(self.validate_kg_nodes())
+
+        if not edges_violations:
+            self._violations.extend(self.validate_kg_edges())
+
+        if not nodes_violations and not edges_violations:
+            self._violations.extend(self.validate_nodes_and_edges())
 
         if len(self._violations) > 0:
             return 1
@@ -120,40 +145,17 @@ class ValidatorPolarsDataFrameImpl(Validator):
         """Get the violations."""
         return self._violations
 
-    def validate_kg_nodes(self, limit: int | None = None):
+    def validate_kg_nodes(self, nodes_schema: pt.Model, limit: int | None = None):
         """Validate a knowledge graph using optional nodes TSV files."""
         logger.info("Validating nodes TSV...")
 
         validation_reports = []
 
-        # do an initial schema check
-        validation_reports.extend(validate_kg_nodes_schema(self._nodes.limit(10), self.prefixes))
+        if limit:
+            self._nodes = self._nodes.limit(limit)
 
-        if validation_reports:
-            return validation_reports
-
-        # and if schema check is good, move on to data checks
-        if not validation_reports:
-            if limit:
-                self._nodes = self._nodes.limit(limit)
-
-            column_names = self._nodes.collect_schema().names()
-            logger.debug(f"{column_names}")
-
-            if self.config_contents and "nodes_attribute_checks" in self.config_contents:
-                for check in self.config_contents["nodes_attribute_checks"]["checks"]:
-                    if "range" in check:
-                        range_check = check["range"]
-                        if range_check["column"] in column_names:
-                            validation_reports.append(
-                                check_column_range(self._nodes, range_check["column"], int(range_check["min"]), int(range_check["max"]))
-                            )
-                    if "enum" in check:
-                        enum_check = check["enum"]
-                        if enum_check["column"] in column_names:
-                            validation_reports.append(check_column_enum(self._nodes, enum_check["column"], list(enum_check["values"])))
-
-            validation_reports.extend(run_node_checks(self._nodes, self.prefixes, self.class_prefix_map))
+        validation_reports.extend(run_config_range_checks(self._nodes, self.config_contents))
+        validation_reports.extend(run_node_checks(self._nodes, self.prefixes, self.class_prefix_map))
 
         return validation_reports
 
@@ -163,35 +165,11 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
         validation_reports = []
 
-        # do an initial schema check
-        validation_reports.extend(validate_kg_edges_schema(self._edges.limit(10), self.prefixes))
+        if limit:
+            self.edges = self._edges.limit(limit)
 
-        if validation_reports:
-            return validation_reports
-
-        # and if schema check is good, move on to data checks
-        if not validation_reports:
-            if limit:
-                self.edges = self._edges.limit(limit)
-
-            column_names = self._edges.collect_schema().names()
-            logger.debug(f"{column_names}")
-            if self.config_contents and "edges_attribute_checks" in self.config_contents:
-                for check in self.config_contents["edges_attribute_checks"]["checks"]:
-                    if "range" in check:
-                        if check["range"]["column"] in column_names:
-                            validation_reports.append(
-                                check_column_range(
-                                    self._edges, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"])
-                                )
-                            )
-                    if "enum" in check:
-                        if check["enum"]["column"] in column_names:
-                            validation_reports.append(
-                                check_column_enum(self._edges, check["range"]["column"], list(check["range"]["values"]))
-                            )
-
-            validation_reports.extend(run_edge_checks(self._edges, self.prefixes))
+        validation_reports.extend(run_config_range_checks(self._edges, self.config_contents))
+        validation_reports.extend(run_edge_checks(self._edges, self.prefixes))
 
         return validation_reports
 
@@ -234,21 +212,38 @@ class ValidatorPolarsFileImpl(Validator):
 
     def validate(self, limit: int | None = None) -> int:
         """Validate a knowledge graph as nodes and edges KGX TSV files."""
-        validation_reports = []
-        if self._nodes:
-            tmp_val_violations = self.validate_kg_nodes(limit)
-            validation_reports.extend(tmp_val_violations)
+        violations = []
 
-        if self._edges:
-            validation_reports.extend(self.validate_kg_edges(limit))
+        # do an initial schema check on nodes
+        nodes_schema = create_nodes_schema(self.prefixes)
+        nodes_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+        nodes_violations = check_schema("nodes", nodes_schema, nodes_df)
+        violations.extend(nodes_violations)
+        violations.extend(check_for_superfluous_columns("nodes", nodes_schema, nodes_df))
 
-        if self._nodes and self._edges:
-            validation_reports.extend(self.validate_nodes_and_edges(limit))
+        # do an initial schema check on edges
+        edges_schema = create_edges_schema(self.prefixes)
+        edges_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+        edges_violations = check_schema("edges", edges_schema, edges_df)
+        violations.extend(edges_violations)
+        violations.extend(check_for_superfluous_columns("edges", edges_schema, edges_df))
+
+        # control flow here is if the above schema checks have violations (missing columns),
+        # then the below checks will also fail due to run time errors instead of validation errors
+
+        if not nodes_violations:
+            violations.extend(self.validate_kg_nodes(limit))
+
+        if not edges_violations:
+            violations.extend(self.validate_kg_edges(limit))
+
+        if not nodes_violations and not edges_violations:
+            violations.extend(self.validate_nodes_and_edges(limit))
 
         # Write validation report
-        self.write_output(validation_reports)
+        self.write_output(violations)
 
-        if len(validation_reports) > 0:
+        if len(violations) > 0:
             return 1
         return 0
 
@@ -258,40 +253,15 @@ class ValidatorPolarsFileImpl(Validator):
 
         validation_reports = []
 
-        # do an initial schema check
-        schema_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True).limit(10).collect()
+        main_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
 
-        validation_reports.extend(validate_kg_nodes_schema(schema_df, self.prefixes))
+        if limit:
+            df = main_df.limit(limit).collect()
+        else:
+            df = main_df.collect()
 
-        if validation_reports:
-            return validation_reports
-
-        # and if schema check is good, move on to data checks
-        if not validation_reports:
-            main_df = pl.scan_csv(self._nodes, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
-
-            if limit:
-                df = main_df.limit(limit).collect()
-            else:
-                df = main_df.collect()
-
-            column_names = df.collect_schema().names()
-            logger.debug(f"{column_names}")
-
-            if self.config_contents and "nodes_attribute_checks" in self.config_contents:
-                for check in self.config_contents["nodes_attribute_checks"]["checks"]:
-                    if "range" in check:
-                        range_check = check["range"]
-                        if range_check["column"] in column_names:
-                            validation_reports.append(
-                                check_column_range(df, range_check["column"], int(range_check["min"]), int(range_check["max"]))
-                            )
-                    if "enum" in check:
-                        enum_check = check["enum"]
-                        if enum_check["column"] in column_names:
-                            validation_reports.append(check_column_enum(df, enum_check["column"], list(enum_check["values"])))
-
-            validation_reports.extend(run_node_checks(df, self.prefixes, self.class_prefix_map))
+        validation_reports.extend(run_config_range_checks(df, self.config_contents))
+        validation_reports.extend(run_node_checks(df, self.prefixes, self.class_prefix_map))
 
         return validation_reports
 
@@ -301,41 +271,15 @@ class ValidatorPolarsFileImpl(Validator):
 
         validation_reports = []
 
-        # do an initial schema check
-        schema_df = (
-            pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True, infer_schema_length=0)
-            .limit(10)
-            .collect()
-        )
+        main_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
 
-        validation_reports.extend(validate_kg_edges_schema(schema_df, self.prefixes))
+        if limit:
+            df = main_df.limit(limit).collect()
+        else:
+            df = main_df.collect()
 
-        if validation_reports:
-            return validation_reports
-
-        # and if schema check is good, move on to data checks
-        if not validation_reports:
-            main_df = pl.scan_csv(self._edges, separator="\t", has_header=True, ignore_errors=True, low_memory=True)
-
-            if limit:
-                df = main_df.limit(limit).collect()
-            else:
-                df = main_df.collect()
-
-            column_names = df.collect_schema().names()
-            logger.debug(f"{column_names}")
-            if self.config_contents and "edges_attribute_checks" in self.config_contents:
-                for check in self.config_contents["edges_attribute_checks"]["checks"]:
-                    if "range" in check:
-                        if check["range"]["column"] in column_names:
-                            validation_reports.append(
-                                check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
-                            )
-                    if "enum" in check:
-                        if check["enum"]["column"] in column_names:
-                            validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
-
-            validation_reports.extend(run_edge_checks(df, self.prefixes))
+        validation_reports.extend(run_config_range_checks(df, self.config_contents))
+        validation_reports.extend(run_edge_checks(df, self.prefixes))
 
         return validation_reports
 
@@ -376,6 +320,40 @@ class ValidatorPolarsFileImpl(Validator):
         validation_reports.extend(analyze_edge_types(nodes_df, edges_df, unique_edge_ids))
 
         return validation_reports
+
+
+def run_config_range_checks(df: pl.DataFrame, config_contents):
+    """Run the config range checks for both nodes or edges."""
+    validation_reports = []
+    column_names = df.collect_schema().names()
+    logger.debug(f"{column_names}")
+
+    if config_contents:
+        if "nodes_attribute_checks" in config_contents:
+            for check in config_contents["nodes_attribute_checks"]["checks"]:
+                if "range" in check:
+                    range_check = check["range"]
+                    if range_check["column"] in column_names:
+                        validation_reports.append(
+                            check_column_range(df, range_check["column"], int(range_check["min"]), int(range_check["max"]))
+                        )
+                if "enum" in check:
+                    enum_check = check["enum"]
+                    if enum_check["column"] in column_names:
+                        validation_reports.append(check_column_enum(df, enum_check["column"], list(enum_check["values"])))
+
+        if "edges_attribute_checks" in config_contents:
+            for check in config_contents["edges_attribute_checks"]["checks"]:
+                if "range" in check:
+                    if check["range"]["column"] in column_names:
+                        validation_reports.append(
+                            check_column_range(df, check["range"]["column"], int(check["range"]["min"]), int(check["range"]["max"]))
+                        )
+                if "enum" in check:
+                    if check["enum"]["column"] in column_names:
+                        validation_reports.append(check_column_enum(df, check["range"]["column"], list(check["range"]["values"])))
+
+    return validation_reports
 
 
 def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_edge_ids):
@@ -480,79 +458,35 @@ def analyze_edge_types(nodes_df: pl.DataFrame, edges_df: pl.DataFrame, unique_ed
     return validation_reports
 
 
-def validate_kg_nodes_schema(df: pl.DataFrame, prefixes: list):
-    """Validate a KG from a Polars Dataframe."""
+def check_for_superfluous_columns(source: str, schema: pt.Model, df: pl.DataFrame):
+    """Find superfluous columns in a KG from a Polars Dataframe."""
     validation_reports = []
-
-    node_schema = create_node_schema(prefixes)
-
     try:
-        node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=False)
+        schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=False)
     except pt.exceptions.DataFrameValidationError as ex:
         superfluous_columns = []
         superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
         if superfluous_columns:
             violation = {
                 "warning": {
-                    "source": "nodes",
+                    "source": source,
                     "check": "superfluous_columns_not_recognized_by_biolink_model",
                     "columns": f"{','.join(superfluous_columns)}",
                 }
             }
             validation_reports.append(json.dumps(violation))
-
-    try:
-        node_schema.validate(df, allow_missing_columns=True, allow_superfluous_columns=True)
-    except pt.exceptions.DataFrameValidationError as ex:
-        columns_by_error_type_map = {}
-        for e in ex.errors():
-            type = e["type"].removeprefix("value_error.")
-            column = _display_error_loc(e)
-
-            if type not in columns_by_error_type_map:
-                columns_by_error_type_map[type] = set()
-
-            if column not in columns_by_error_type_map[type]:
-                columns_by_error_type_map[type].add(column)
-
-        if columns_by_error_type_map:
-            for key, value in columns_by_error_type_map.items():
-                violation = {"error": {"source": "nodes", "check": "schema_validation", "type": key, "column": value}}
-                validation_reports.append(json.dumps(violation, default=serialize_sets))
-
     return validation_reports
 
 
-def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
+def check_schema(source: str, schema: pt.Model, df: pl.DataFrame):
     """Validate a KG from a Polars Dataframe."""
     validation_reports = []
-
-    schema_df = df.limit(10)
-
-    edge_schema = create_edge_schema(prefixes)
-
     try:
-        edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=False)
+        schema.validate(df, allow_missing_columns=False, allow_superfluous_columns=True)
     except pt.exceptions.DataFrameValidationError as ex:
-        superfluous_columns = []
-        superfluous_columns.extend([_display_error_loc(e) for e in ex.errors() if e["type"] == "type_error.superfluouscolumns"])
-        if superfluous_columns:
-            violation = {
-                "warning": {
-                    "source": "edges",
-                    "check": "superfluous_columns_not_recognized_by_biolink_model",
-                    "columns": f"{','.join(superfluous_columns)}",
-                }
-            }
-            validation_reports.append(json.dumps(violation))
-
-    try:
-        edge_schema.validate(schema_df, allow_missing_columns=True, allow_superfluous_columns=True)
-    except pt.exceptions.DataFrameValidationError as ex:
-        # validation_reports.append("\n".join(f"{e['msg']}: {_display_error_loc(e)}" for e in ex.errors()))
         columns_by_error_type_map = {}
         for e in ex.errors():
-            type = e["type"].removeprefix("value_error.")
+            type = e["type"].removeprefix("value_error.").removeprefix("type_error.")
             column = _display_error_loc(e)
 
             if type not in columns_by_error_type_map:
@@ -563,7 +497,7 @@ def validate_kg_edges_schema(df: pl.DataFrame, prefixes: list):
 
         if columns_by_error_type_map:
             for key, value in columns_by_error_type_map.items():
-                violation = {"error": {"source": "edges", "check": "schema_validation", "type": key, "column": value}}
+                violation = {"error": {"source": source, "check": "schema_validation", "type": key, "column": value}}
                 validation_reports.append(json.dumps(violation, default=serialize_sets))
 
     return validation_reports
@@ -609,13 +543,21 @@ def run_node_checks(df: pl.DataFrame, prefixes: list, class_prefix_map: dict):
         if counts_df.get_column("invalid_delimited_by_pipes_category_count").item(0) > 0:
             validation_reports.append(check_column_is_delimited_by_pipes(node_check_df, "category"))
 
-        validation_reports.append(check_node_id_and_category_with_biolink_preferred_prefixes(class_prefix_map, node_check_df))
+        tmp_violation = check_node_id_and_category_with_biolink_preferred_prefixes(class_prefix_map, node_check_df)
+        if tmp_violation:
+            validation_reports.append(tmp_violation)
 
         logger.debug(f"number of total violations: {len(validation_reports)}")
 
     except pl.exceptions.ColumnNotFoundError as ex:
-        logger.error(f"missing required column: {repr(ex)}")
-        validation_reports.append(f"Missing required column: {repr(ex)}")
+        violation = {
+            "error": {
+                "source": "nodes",
+                "check": "Missing Required Column",
+                "columns": f"{repr(ex)}",
+            }
+        }
+        validation_reports.append(json.dumps(violation))
     except Exception as ex:
         logger.exception(ex)
 
@@ -673,5 +615,12 @@ def run_edge_checks(df: pl.DataFrame, prefixes: list):
 
     except pl.exceptions.ColumnNotFoundError as ex:
         logger.error(f"missing required column: {repr(ex)}")
-        validation_reports.append(f"Missing required column: {repr(ex)}")
+        violation = {
+            "error": {
+                "source": "edges",
+                "check": "Missing Required Column",
+                "columns": f"{repr(ex)}",
+            }
+        }
+        validation_reports.append(json.dumps(violation))
     return validation_reports
