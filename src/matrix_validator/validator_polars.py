@@ -112,7 +112,6 @@ class ValidatorPolarsDataFrameImpl(Validator):
 
     def validate(self, limit: int | None = None) -> int:
         """Validate inputs."""
-
         # do an initial schema check on nodes
         nodes_schema = create_nodes_schema(self.prefixes)
         nodes_violations = check_schema("nodes", nodes_schema, self._nodes.limit(10))
@@ -260,8 +259,6 @@ class ValidatorPolarsFileImpl(Validator):
             df = main_df.limit(limit).collect()
         else:
             df = main_df.collect()
-
-        validation_reports.extend(check_for_superfluous_columns("nodes", nodes_schema, df))
 
         validation_reports.extend(run_config_range_checks(df, self.config_contents))
         validation_reports.extend(run_node_checks(df, self.prefixes, self.class_prefix_map))
