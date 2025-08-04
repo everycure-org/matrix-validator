@@ -20,7 +20,7 @@ pandera = "^0.24"
 tqdm = "*"
 biolink-model = "4.2.6rc4"
 patito = "0.8.3"
-matrix-schema = "^0.2.0"
+matrix-schema = "^0.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = {version = ">=8.3.2"}
